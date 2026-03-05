@@ -1,0 +1,126 @@
+{
+  "projectType": "frontend",
+  "projectName": "TemPad Dev",
+  "projectDescription": "Inspect panel on Figma that provides CSS/JavaScript code generation, plugins, and MCP server integration for everyone.",
+  "theme": "willow",
+  "primaryColor": "#e47443",
+  "lightColor": "#e4e4e4",
+  "darkColor": "#da4d41",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/inspect-code",
+              "features/deep-select",
+              "features/measure-mode",
+              "features/scroll-into-view"
+            ]
+          },
+          {
+            "group": "Plugins",
+            "pages": [
+              "plugins/overview",
+              "plugins/creating-plugins",
+              "plugins/deploying-plugins",
+              "plugins/available-plugins"
+            ]
+          },
+          {
+            "group": "MCP Server",
+            "pages": [
+              "mcp/overview",
+              "mcp/setup",
+              "mcp/tools",
+              "mcp/agent-skill",
+              "mcp/configuration"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/preferences",
+              "configuration/units",
+              "configuration/variables"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Plugin API",
+            "pages": [
+              "api/define-plugin",
+              "api/transform-hooks",
+              "api/types"
+            ]
+          },
+          {
+            "group": "MCP Tools",
+            "pages": [
+              "api/get-code",
+              "api/get-structure"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/architecture",
+              "development/setup",
+              "development/testing",
+              "development/building"
+            ]
+          },
+          {
+            "group": "Packages",
+            "pages": [
+              "development/extension",
+              "development/mcp-server",
+              "development/plugins-package",
+              "development/shared"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "CSS and JavaScript code inspection from Figma selections",
+    "Deep select mode for easier node selection in read-only views",
+    "Measure to selection mode for spacing visualization",
+    "Customizable plugin system for code transformation",
+    "MCP server for AI agent and IDE integration",
+    "Configurable CSS units (px, rem) and root font size",
+    "Variable display modes (Reference/Resolved/Both)",
+    "Scroll selection into view feature"
+  ],
+  "publicApiSurface": [
+    "definePlugin() - Create custom plugins",
+    "transform() - Transform style object/code to string",
+    "transformVariable() - Convert CSS variables to alternate formats",
+    "transformPx() - Convert pixel values to other units",
+    "transformComponent() - Convert design components to dev components",
+    "get_code - MCP tool for high-fidelity code output",
+    "get_structure - MCP tool for structural outline",
+    "@tempad-dev/plugins - Plugin SDK package",
+    "@tempad-dev/mcp - MCP server package"
+  ]
+}
