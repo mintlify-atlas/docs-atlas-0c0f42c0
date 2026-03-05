@@ -83,6 +83,7 @@
             "pages": [
               "api/define-plugin",
               "api/transform-hooks",
+              "api/helpers",
               "api/types"
             ]
           },

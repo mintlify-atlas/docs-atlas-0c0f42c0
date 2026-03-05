@@ -1,0 +1,400 @@
+---
+title: Helper Functions
+description: Utility functions for building DevComponent trees and querying design nodes
+---
+
+## Overview
+
+The `@tempad-dev/plugins` package exports several helper functions that make it easier to work with design nodes and build component trees:
+
+- **`h()`** - Hyperscript helper for building DevComponent trees
+- **`raw()`** - Create raw markup nodes
+- **Query helpers** - Find and filter design nodes (findChild, findChildren, findOne, findAll, queryAll, queryOne)
+
+## h()
+
+Hyperscript helper to compose `DevComponent` trees from plugin code with a clean JSX-like syntax.
+
+### Signature
+
+```typescript
+function h(name: string): DevComponent<Record<string, unknown>>
+
+function h(
+  name: string,
+  children: (DevComponent | string)[] | DevComponent | string
+): DevComponent<Record<string, unknown>>
+
+function h<T extends object>(
+  name: string,
+  props: T,
+  children?: (DevComponent | string)[] | DevComponent | string
+): DevComponent<T>
+```
+
+### Parameters
+
+<ParamField path="name" type="string" required>
+  Component name or tag to render
+</ParamField>
+
+<ParamField path="props" type="object">
+  Optional props object with component properties
+</ParamField>
+
+<ParamField path="children" type="(DevComponent | string)[] | DevComponent | string">
+  Optional children - can be a single child, an array of children, or a string
+</ParamField>
+
+### Returns
+
+<ResponseField name="DevComponent" type="DevComponent<T>">
+  A dev component tree node ready for serialization
+</ResponseField>
+
+### Examples
+
+**Simple text node:**
+```typescript
+const text = h('Text', 'Hello world')
+```
+
+**Component with props:**
+```typescript
+const button = h('Button', { variant: 'primary' }, ['Submit'])
+```
+
+**Nested component tree:**
+```typescript
+const preview = h('Container', { size: 'lg' }, [
+  h('Heading', { level: 2 }, ['Button']),
+  h('Button', { variant: 'primary' }, ['Submit'])
+])
+```
+
+---
+
+## raw()
+
+Helper to create a raw markup node. This allows you to inject HTML or other markup directly into the component tree.
+
+### Signature
+
+```typescript
+function raw(
+  content: string, 
+  injectedProps?: Record<string, string>
+): DevComponent
+```
+
+### Parameters
+
+<ParamField path="content" type="string" required>
+  The raw markup content to inject
+</ParamField>
+
+<ParamField path="injectedProps" type="Record<string, string>">
+  Optional properties to inject into the markup
+</ParamField>
+
+### Returns
+
+<ResponseField name="DevComponent" type="DevComponent">
+  A dev component with name `__tempad_raw__` containing the raw content
+</ResponseField>
+
+### Example
+
+```typescript
+import { raw, RAW_TAG_NAME } from '@tempad-dev/plugins'
+
+const markup = raw('<div class="custom">Content</div>', { 
+  'data-id': 'custom-div' 
+})
+```
+
+<Note>
+  The `RAW_TAG_NAME` constant (`'__tempad_raw__'`) is exported for checking if a component is a raw node.
+</Note>
+
+---
+
+## Query Helpers
+
+These functions help you find and filter design nodes within a component tree. All query helpers accept a `NodeQuery` parameter which can be:
+
+- A property-based query: `{ type: 'TEXT', name: /title/i }`
+- A predicate function: `(node) => node.visible && node.name.startsWith('btn')`
+
+### findChild()
+
+Find the first direct child that matches the query.
+
+#### Signature
+
+```typescript
+function findChild<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  query: NodeQuery
+): T | null
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Parent container to search
+</ParamField>
+
+<ParamField path="query" type="NodeQuery" required>
+  Predicate or property query description
+</ParamField>
+
+#### Returns
+
+The first matching direct child or `null` when none found.
+
+#### Example
+
+```typescript
+const title = findChild(component, { type: 'TEXT', name: /title/i })
+```
+
+---
+
+### findChildren()
+
+Find all direct children that match the query.
+
+#### Signature
+
+```typescript
+function findChildren<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  query: NodeQuery
+): T[]
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Parent container to search
+</ParamField>
+
+<ParamField path="query" type="NodeQuery" required>
+  Predicate or property query description
+</ParamField>
+
+#### Returns
+
+An array of matching direct children.
+
+#### Example
+
+```typescript
+const icons = findChildren(toolbar, { type: 'VECTOR' })
+```
+
+---
+
+### findOne()
+
+Depth-first search for the first node that matches the query (searches recursively through all descendants).
+
+#### Signature
+
+```typescript
+function findOne<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  query: NodeQuery
+): T | null
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Root container to search recursively
+</ParamField>
+
+<ParamField path="query" type="NodeQuery" required>
+  Predicate or property query description
+</ParamField>
+
+#### Returns
+
+The first nested node that matches or `null`.
+
+#### Example
+
+```typescript
+const submitButton = findOne(frame, { name: 'Submit' })
+```
+
+---
+
+### findAll()
+
+Depth-first search returning every node that matches the query (searches recursively through all descendants).
+
+#### Signature
+
+```typescript
+function findAll<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  query: NodeQuery
+): T[]
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Root container to search recursively
+</ParamField>
+
+<ParamField path="query" type="NodeQuery" required>
+  Predicate or property query description
+</ParamField>
+
+#### Returns
+
+All nodes within the subtree that satisfy the query.
+
+#### Example
+
+```typescript
+const texts = findAll(page, { type: 'TEXT', visible: true })
+```
+
+---
+
+### queryAll()
+
+Execute a sequence of queries, returning the final node collection. This is useful for chaining multiple query operations.
+
+#### Signature
+
+```typescript
+function queryAll<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  queries: (NodeQuery & { query: QueryType })[]
+): T[]
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Root container to start the pipeline from
+</ParamField>
+
+<ParamField path="queries" type="(NodeQuery & { query: QueryType })[]" required>
+  Ordered list describing how each query step should behave
+  
+  Each query object includes a `query` field specifying the query type:
+  - `'child'` - Use findChild for this step
+  - `'children'` - Use findChildren for this step
+  - `'one'` - Use findOne for this step
+  - `'all'` - Use findAll for this step
+</ParamField>
+
+#### Returns
+
+The collection of nodes produced by the final query step.
+
+#### Example
+
+```typescript
+const buttons = queryAll(frame, [
+  { query: 'children', name: 'Footer' },
+  { query: 'all', type: 'INSTANCE', name: /Button/ }
+])
+```
+
+---
+
+### queryOne()
+
+Execute a sequence of queries and return only the first match.
+
+#### Signature
+
+```typescript
+function queryOne<T extends DesignNode = DesignNode>(
+  node: ContainerNode,
+  queries: (NodeQuery & { query: QueryType })[]
+): T | null
+```
+
+#### Parameters
+
+<ParamField path="node" type="ContainerNode" required>
+  Root container to start the pipeline from
+</ParamField>
+
+<ParamField path="queries" type="(NodeQuery & { query: QueryType })[]" required>
+  Ordered list describing how each query step should behave
+</ParamField>
+
+#### Returns
+
+The first node produced by the query sequence or `null`.
+
+#### Example
+
+```typescript
+const header = queryOne(page, [
+  { query: 'children', name: 'Header' },
+  { query: 'child', type: 'FRAME', name: /Top Bar/ }
+])
+```
+
+---
+
+## NodeQuery Type
+
+The `NodeQuery` type accepts either a property-based query or a predicate function:
+
+```typescript
+type NodeQuery = 
+  | RequireAtLeastOne<QueryableProperties> 
+  | ((node: DesignNode) => boolean)
+```
+
+### Property-Based Queries
+
+Query by node properties with support for:
+- **Exact match**: `{ type: 'TEXT' }`
+- **Array of options**: `{ name: ['Button', 'Submit'] }`
+- **Regular expression**: `{ name: /button/i }`
+
+```typescript
+// Exact match
+findOne(frame, { type: 'TEXT' })
+
+// Array of options
+findAll(page, { name: ['Header', 'Footer'] })
+
+// Regular expression
+findChildren(toolbar, { name: /icon/i })
+
+// Multiple properties
+findOne(frame, { type: 'INSTANCE', visible: true })
+```
+
+### Predicate Functions
+
+Use a custom function for complex matching logic:
+
+```typescript
+const largeTitles = findAll(page, (node) => 
+  node.type === 'TEXT' && 
+  node.name.startsWith('Title') &&
+  node.visible
+)
+```
+
+---
+
+## See Also
+
+- [Transform Hooks](/api/transform-hooks) - Learn about plugin transform hooks
+- [Types Reference](/api/types) - Complete type definitions
+- [Creating Plugins](/plugins/creating-plugins) - Plugin development guide
