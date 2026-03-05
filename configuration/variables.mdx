@@ -1,0 +1,338 @@
+---
+title: Variable Display
+description: Control how CSS variables are displayed in generated code
+---
+
+TemPad Dev provides flexible control over how CSS variables (custom properties) are displayed in the generated code output. Use the **Variable display** preference to choose whether code shows variable references, resolved values, or both.
+
+## Display Modes
+
+The `variableDisplay` option accepts three values:
+
+- **Reference** (default): Shows only the CSS variable reference
+- **Resolved**: Shows only the resolved/computed value
+- **Both**: Shows the variable reference with the resolved value as fallback
+
+### Reference Mode
+
+Displays the CSS variable reference without the fallback value, resulting in clean variable-based code.
+
+**Figma output:** `var(--primary, #fff)`
+
+**Reference mode output:**
+
+```css
+color: var(--primary);
+```
+
+This is ideal when:
+- Your codebase uses a design token system
+- You want to maintain variable references in the output
+- Fallback values are defined elsewhere in your CSS
+
+### Resolved Mode
+
+Displays only the resolved value, removing variable references entirely.
+
+**Figma output:** `var(--primary, #11223380)`
+
+**Resolved mode output:**
+
+```css
+color: rgba(17, 34, 51, 0.5);
+```
+
+Additional processing in resolved mode:
+- Hex alpha colors are converted to `rgba()` format
+- `color-mix()` functions are simplified to `rgba()` when possible
+
+```css
+/* Input: var(--accent, #11223380) */
+color: rgba(17, 34, 51, 0.5);
+
+/* Input: color-mix(in srgb, #112233 50%, transparent) */
+background: rgba(17, 34, 51, 0.5);
+```
+
+This is ideal when:
+- You need static color values
+- Your project doesn't use CSS variables
+- You want to see the actual computed colors
+
+### Both Mode
+
+Displays the CSS variable reference with the resolved value as a fallback, providing maximum context.
+
+**Figma output:** `var(--brand, #fff)`
+
+**Both mode output:**
+
+```css
+color: var(--brand, #fff);
+```
+
+This is ideal when:
+- You want to see both the variable name and its value
+- You're documenting design tokens
+- You need fallback values for browser compatibility
+
+## Configuration
+
+The variable display mode is stored in preferences:
+
+```typescript
+export type Options = {
+  // ... other options
+  variableDisplay: 'reference' | 'resolved' | 'both'
+}
+```
+
+Default value:
+
+```typescript
+{
+  variableDisplay: 'reference'
+}
+```
+
+## Implementation Details
+
+### Type Definition
+
+Defined in `types/codegen.ts`:
+
+```typescript
+export type VariableDisplayMode = 'reference' | 'resolved' | 'both'
+
+export interface SerializeOptions {
+  useRem: boolean
+  rootFontSize: number
+  scale: number
+  variableDisplay?: VariableDisplayMode
+}
+```
+
+### Processing Logic
+
+Implemented in `utils/css.ts` within the `serializeCSS` function:
+
+```typescript
+function applyDisplayMode(value: string): string {
+  if (!displayMode || displayMode === 'reference') {
+    return stripFallback(value)
+  }
+  if (displayMode === 'resolved') {
+    return replaceVarFunctions(value, ({ full, fallback }) => fallback ?? full)
+  }
+  return value  // 'both' mode keeps original format
+}
+```
+
+### Value Processing Pipeline
+
+When a display mode is active, values go through this processing sequence:
+
+```typescript
+function processValue(key: string, value: string) {
+  let current = value
+  const useDisplayMode = displayMode != null
+
+  // 1. Preprocess if display mode is active
+  if (useDisplayMode) {
+    current = preprocessCssValue(current)
+    current = current.replace(ZERO_UNITS_RE, '$10').trim()
+  }
+
+  // 2. Apply scale transformation
+  if (typeof scale === 'number' && scale !== 1) {
+    current = scalePxValue(current, scale)
+  }
+
+  // 3. Apply variable transformations (plugin hook)
+  if (typeof transformVariable === 'function') {
+    current = replaceVarFunctions(current, ({ name, fallback }) => {
+      const trimmed = name.trim()
+      const normalizedName = trimmed.startsWith('--') ? trimmed.slice(2) : trimmed
+      return transformVariable({
+        code: current,
+        name: normalizedName,
+        value: fallback,
+        options
+      })
+    })
+  }
+
+  // 4. Apply display mode
+  if (useDisplayMode) {
+    current = applyDisplayMode(current)
+    if (displayMode === 'resolved') {
+      current = simplifyColorMixToRgba(current)
+    }
+  }
+
+  // 5. Simplify hex alpha to rgba
+  current = simplifyHexAlphaToRgba(current)
+
+  // ... continue with rem conversion if needed
+}
+```
+
+## Plugin Integration
+
+Plugins can transform variable references using the `transformVariable` hook:
+
+```typescript
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'Sass Variables',
+  code: {
+    css: {
+      transformVariable({ name, value, options }) {
+        // Convert CSS variables to Sass variables
+        return value ? `$${name}` : `$${name} /* ${value} */`
+      }
+    }
+  }
+})
+```
+
+The hook receives:
+
+```typescript
+{
+  code: string,      // Current CSS value being processed
+  name: string,      // Variable name (without -- prefix)
+  value: string | undefined,  // Fallback value if present
+  options: {         // Current unit configuration
+    useRem: boolean
+    rootFontSize: number
+    scale: number
+  }
+}
+```
+
+## Testing Examples
+
+From the test suite (`tests/utils/css.test.ts`):
+
+```typescript
+it('applies variable display modes and transform hooks', () => {
+  // Reference mode
+  const reference = serializeCSS(
+    { color: 'var(--primary, #fff)' },
+    { ...baseOptions, variableDisplay: 'reference' }
+  )
+  expect(reference).toContain('color: var(--primary);')
+
+  // Resolved mode with color simplification
+  const resolved = serializeCSS(
+    {
+      color: 'var(--primary, #11223380)',
+      background: 'color-mix(in srgb, #112233 50%, transparent)'
+    },
+    { ...baseOptions, variableDisplay: 'resolved' }
+  )
+  expect(resolved).toContain('color: rgba(17, 34, 51, 0.5);')
+  expect(resolved).toContain('background: rgba(17, 34, 51, 0.5);')
+
+  // Both mode with plugin transformation
+  const both = serializeCSS(
+    {
+      color: 'var(--brand, #fff)',
+      width: '10px'
+    },
+    { ...baseOptions, variableDisplay: 'both' },
+    {
+      transformVariable: ({ name, value }) => `token(${name}:${value ?? ''})`,
+      transformPx: ({ value }) => `${value / 2}u`
+    }
+  )
+  expect(both).toContain('color: token(brand:#fff);')
+  expect(both).toContain('width: 5u;')
+})
+```
+
+## Edge Cases
+
+### Variables Without Fallbacks
+
+When a variable has no fallback value in resolved mode:
+
+```typescript
+const resolvedNoFallback = serializeCSS(
+  { color: 'var(--brand)' },
+  { ...baseOptions, variableDisplay: 'resolved' }
+)
+// Output: color: var(--brand);
+```
+
+The variable reference is preserved since there's no fallback to resolve to.
+
+### Non-Dashed Variable Names
+
+Variables without the `--` prefix are normalized:
+
+```typescript
+const nonDashedVar = serializeCSS(
+  { color: 'var(primary)' },
+  { ...baseOptions, variableDisplay: 'both' },
+  {
+    transformVariable: ({ name }) => `token(${name})`
+  }
+)
+// Output: color: token(primary);
+```
+
+### Complex Color Transformations
+
+Resolved mode applies multiple simplifications:
+
+```css
+/* Input */
+color: var(--accent, #11223380);
+background: color-mix(in srgb, #336699 50%, transparent);
+
+/* Resolved mode output */
+color: rgba(17, 34, 51, 0.5);
+background: rgba(51, 102, 153, 0.5);
+```
+
+## Use Cases
+
+### Design System Documentation
+
+Use **Both** mode to show variable names alongside their values:
+
+```css
+color: var(--color-primary-500, #3b82f6);
+background: var(--color-gray-100, #f3f4f6);
+padding: var(--spacing-4, 16px);
+```
+
+### Component Library Development
+
+Use **Reference** mode for components that consume design tokens:
+
+```css
+color: var(--color-primary-500);
+background: var(--color-gray-100);
+padding: var(--spacing-4);
+```
+
+### Static Site Generation
+
+Use **Resolved** mode when CSS variables aren't supported:
+
+```css
+color: #3b82f6;
+background: #f3f4f6;
+padding: 16px;
+```
+
+## Related Topics
+
+- [Preferences](/configuration/preferences) - General preference settings
+- [Units](/configuration/units) - Unit conversion configuration
+- [Creating Plugins](/plugins/creating-plugins) - Custom variable transformations
+- [Plugin Hooks](/api/transform-hooks) - transformVariable hook reference

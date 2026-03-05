@@ -1,0 +1,395 @@
+---
+title: Installation
+description: Install the TemPad Dev browser extension and configure initial settings
+---
+
+## Browser Extension Installation
+
+### Chrome Web Store
+
+Install TemPad Dev directly from the Chrome Web Store:
+
+<Card title="Install on Chrome Web Store" icon="chrome" href="https://chrome.google.com/webstore/detail/tempad-dev/lgoeakbaikpkihoiphamaeopmliaimpc">
+  Click to install TemPad Dev for Chrome, Edge, Brave, and other Chromium-based browsers
+</Card>
+
+<Steps>
+  <Step title="Visit Chrome Web Store">
+    Navigate to the [TemPad Dev extension page](https://chrome.google.com/webstore/detail/tempad-dev/lgoeakbaikpkihoiphamaeopmliaimpc)
+  </Step>
+  
+  <Step title="Add to Browser">
+    Click "Add to Chrome" (or "Add to Edge" if using Microsoft Edge)
+  </Step>
+  
+  <Step title="Confirm Installation">
+    Review the permissions and click "Add extension" to confirm
+  </Step>
+  
+  <Step title="Verify Installation">
+    Open any Figma file at `figma.com` to see the TemPad Dev panel
+  </Step>
+</Steps>
+
+## Requirements and Compatibility
+
+### Browser Support
+
+TemPad Dev works on all Chromium-based browsers:
+
+- Google Chrome (recommended)
+- Microsoft Edge
+- Brave
+- Opera
+- Vivaldi
+- Other Chromium-based browsers
+
+<Warning>
+Firefox is not currently supported. The extension requires Chromium-specific APIs.
+</Warning>
+
+### Figma Compatibility
+
+TemPad Dev works with:
+
+- **Figma Files**: Full support in edit and view-only modes
+- **FigJam Files**: Limited support (basic inspection)
+- **Figma Prototypes**: Inspection available in prototype mode
+
+### System Requirements
+
+- **Operating System**: Windows, macOS, Linux, or Chrome OS
+- **Browser Version**: Latest stable version recommended
+- **Internet Connection**: Required for accessing Figma files
+
+### Optional: MCP Server
+
+For AI agent integration, additional requirements apply:
+
+- **Node.js**: Version 18 or higher
+- **NPM/NPX**: Installed with Node.js
+
+<Info>
+The MCP server is optional and only required if you want to use TemPad Dev with AI coding agents like Claude or Cursor.
+</Info>
+
+## Initial Setup
+
+### First Launch
+
+After installing the extension:
+
+<Steps>
+  <Step title="Open Figma">
+    Navigate to any Figma file at `https://www.figma.com/`
+  </Step>
+  
+  <Step title="Locate TemPad Dev Panel">
+    The TemPad Dev panel appears automatically in the Figma interface. Look for the panel alongside the native Figma inspect tools.
+  </Step>
+  
+  <Step title="Select an Element">
+    Click any element on the canvas to see extracted code in the TemPad Dev panel
+  </Step>
+</Steps>
+
+### Access Preferences
+
+Configure TemPad Dev to match your workflow:
+
+<Steps>
+  <Step title="Open Preferences">
+    Click the settings icon in the TemPad Dev panel header
+  </Step>
+  
+  <Step title="Configure Units">
+    Set your preferred CSS units (px or rem) and root font size
+    
+    ```
+    Units: rem
+    Root Font Size: 16px
+    Scale: 1
+    ```
+  </Step>
+  
+  <Step title="Enable Features">
+    Toggle optional features like Deep Select Mode and Measure to Selection
+  </Step>
+  
+  <Step title="Variable Display">
+    Choose how CSS variables are displayed:
+    - **Reference**: Show variable names only (`var(--color-primary)`)
+    - **Resolved**: Show computed values only (`#6699cc`)
+    - **Both**: Show both formats (`var(--color-primary, #6699cc)`)
+  </Step>
+</Steps>
+
+## Permissions Explained
+
+### Required Permissions
+
+TemPad Dev requests the following permissions:
+
+<Accordion title="Access to figma.com">
+  **Why needed**: The extension must inject into Figma pages to read design data and display the inspection panel.
+  
+  **Scope**: Only `https://www.figma.com/*` - no other websites are accessed.
+</Accordion>
+
+<Accordion title="Storage">
+  **Why needed**: Stores your preferences, plugin configurations, and MCP settings locally.
+  
+  **Privacy**: All data remains in your browser. Nothing is sent to external servers.
+</Accordion>
+
+<Accordion title="Web Request">
+  **Why needed**: Modifies Figma's page behavior to enable inspection features.
+  
+  **Scope**: Limited to Figma domain only.
+</Accordion>
+
+## Configuration Options
+
+### CSS Units
+
+Control how measurements are output:
+
+```
+Units: px | rem
+Root Font Size: 16px (for rem conversion)
+Scale: 1 (multiplier for all values)
+```
+
+**Example with rem:**
+
+```css
+/* Input: 24px in Figma */
+/* Output with rem (root 16px): */
+font-size: 1.5rem;
+```
+
+### Variable Display Modes
+
+<CodeGroup>
+
+```css Reference
+/* Shows variable names only */
+background-color: var(--color-primary);
+color: var(--color-text);
+```
+
+```css Resolved
+/* Shows computed values only */
+background-color: #6699cc;
+color: #1a1a1a;
+```
+
+```css Both
+/* Shows variable names with fallback values */
+background-color: var(--color-primary, #6699cc);
+color: var(--color-text, #1a1a1a);
+```
+
+</CodeGroup>
+
+### Enhanced Selection Modes
+
+#### Deep Select Mode
+
+<Info>
+Automatically drills down to the lowest-level node without repeated double-clicks. Essential for working in view-only mode.
+</Info>
+
+Enable in: **Preferences → Deep Select Mode**
+
+**Behavior:**
+- Single click selects the deepest nested element
+- No need for ⌘/Ctrl + click shortcuts
+- Works in both edit and view-only modes
+
+#### Measure to Selection Mode
+
+<Info>
+Shows spacing between elements without holding modifier keys. Streamlines measurement workflow.
+</Info>
+
+Enable in: **Preferences → Measure to Selection Mode**
+
+**Behavior:**
+- Automatically displays spacing measurements
+- No need to hold ⌥/Alt key
+- Replaces Figma's default measurement behavior
+
+## Plugin Installation
+
+Extend TemPad Dev with community plugins:
+
+<Steps>
+  <Step title="Find a Plugin">
+    Browse available plugins in the [README](https://github.com/ecomfe/tempad-dev#plugins) or create your own
+  </Step>
+  
+  <Step title="Copy Plugin URL">
+    Get the raw URL for the plugin JavaScript file
+    
+    ```
+    https://raw.githubusercontent.com/username/repo/main/plugin.js
+    ```
+    
+    Or use built-in plugin names with `@` prefix:
+    
+    ```
+    @tailwind
+    @kong
+    @react-native
+    ```
+  </Step>
+  
+  <Step title="Open Plugin Settings">
+    Navigate to **Preferences → Plugins** in the TemPad Dev panel
+  </Step>
+  
+  <Step title="Add Plugin URL">
+    Paste the plugin URL or `@name` and click "Add Plugin"
+  </Step>
+  
+  <Step title="Verify Installation">
+    Select an element and check that new code blocks appear according to the plugin configuration
+  </Step>
+</Steps>
+
+<Warning>
+Plugin code is stored locally and not auto-updated. You must manually update plugins from the UI when new versions are released.
+</Warning>
+
+### Popular Plugins
+
+- **@tailwind**: Convert CSS to Tailwind CSS classes
+- **@kong**: Kong Design System components
+- **@react-native**: React Native StyleSheet format
+- **@nuxt**: Nuxt UI components
+- **@fubukicss/unocss**: UnoCSS utilities
+
+## MCP Server Setup (Optional)
+
+<Info>
+The MCP server enables AI coding agents to extract code from Figma. Skip this section if you're not using AI agents.
+</Info>
+
+### Requirements
+
+- Node.js 18 or higher installed
+- TemPad Dev extension active in a Figma tab
+
+### Installation
+
+<Steps>
+  <Step title="Enable MCP in Extension">
+    Open **Preferences → MCP server** and toggle **Enable MCP server**
+  </Step>
+  
+  <Step title="Configure Your AI Client">
+    Add TemPad Dev to your MCP client configuration:
+    
+    <CodeGroup>
+    
+    ```json Claude Desktop
+    {
+      "mcpServers": {
+        "TemPad Dev": {
+          "command": "npx",
+          "args": ["-y", "@tempad-dev/mcp@latest"]
+        }
+      }
+    }
+    ```
+    
+    ```bash Claude CLI
+    claude mcp add --transport stdio "TemPad Dev" -- npx -y @tempad-dev/mcp@latest
+    ```
+    
+    ```bash Codex CLI
+    codex mcp add "TemPad Dev" -- npx -y @tempad-dev/mcp@latest
+    ```
+    
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Install Agent Skill (Recommended)">
+    Install the TemPad Dev skill for better AI code generation:
+    
+    ```bash
+    npx skills add https://github.com/ecomfe/tempad-dev/tree/main/skill
+    ```
+  </Step>
+  
+  <Step title="Keep Figma Tab Active">
+    The MCP server requires an active Figma tab with TemPad Dev open. Click the MCP badge in the panel to activate the correct file.
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Extension Not Appearing
+
+<Steps>
+  <Step title="Verify Installation">
+    Check that TemPad Dev appears in `chrome://extensions`
+  </Step>
+  
+  <Step title="Refresh Figma">
+    Hard refresh the Figma page with Ctrl+Shift+R (Cmd+Shift+R on Mac)
+  </Step>
+  
+  <Step title="Check Figma URL">
+    Ensure you're on `https://www.figma.com/design/*` or `https://www.figma.com/file/*`
+  </Step>
+</Steps>
+
+### Code Not Showing
+
+<Steps>
+  <Step title="Select an Element">
+    Ensure you have an element selected on the canvas
+  </Step>
+  
+  <Step title="Check Console">
+    Open browser DevTools (F12) and check for errors in the console
+  </Step>
+  
+  <Step title="Disable Other Extensions">
+    Temporarily disable other Figma-related extensions to check for conflicts
+  </Step>
+</Steps>
+
+### Plugin Errors
+
+<Warning>
+Plugin URLs must support CORS (Cross-Origin Resource Sharing). GitHub raw URLs and Gist URLs work correctly.
+</Warning>
+
+<Steps>
+  <Step title="Verify Plugin URL">
+    Ensure the URL is accessible and returns valid JavaScript
+  </Step>
+  
+  <Step title="Check Plugin Format">
+    Plugin must export via `default` export or `plugin` named export
+  </Step>
+  
+  <Step title="Remove and Re-add">
+    Remove the plugin and add it again to clear any cached errors
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="rocket" href="/quickstart">
+    Follow a step-by-step tutorial for your first code extraction
+  </Card>
+  
+  <Card title="Plugin Development" icon="code" href="/plugins/overview">
+    Learn how to create custom plugins for your workflow
+  </Card>
+</CardGroup>

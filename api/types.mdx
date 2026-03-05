@@ -1,0 +1,319 @@
+---
+title: 'Type Definitions'
+description: 'Complete TypeScript type reference for TemPad Dev plugins'
+---
+
+## Design Node Types
+
+### DesignNode
+
+Union of all design node types that plugins can work with.
+
+```typescript
+type DesignNode = GroupNode | FrameNode | VectorNode | TextNode | DesignComponent
+```
+
+### SupportedDesignNodeType
+
+Figma node types that TemPad Dev plugins can query against.
+
+```typescript
+type SupportedDesignNodeType = 'GROUP' | 'FRAME' | 'VECTOR' | 'TEXT' | 'INSTANCE'
+```
+
+### TextNode
+
+Figma text node with character content.
+
+```typescript
+interface TextNode {
+  /** Human-friendly node name shown in Figma */
+  name: string
+  
+  /** Identifies the node as a text node */
+  type: 'TEXT'
+  
+  /** Whether the node is visible in the current document */
+  visible: boolean
+  
+  /** Raw text characters contained in the node */
+  characters: string
+}
+```
+
+### GroupNode
+
+Group node containing ordered child nodes.
+
+```typescript
+interface GroupNode {
+  /** Human-friendly node name shown in Figma */
+  name: string
+  
+  /** Identifies the node as a group */
+  type: 'GROUP'
+  
+  /** Whether the node is visible in the current document */
+  visible: boolean
+  
+  /** Ordered child nodes within this container */
+  children: DesignNode[]
+}
+```
+
+### FrameNode
+
+Frame node containing ordered child nodes.
+
+```typescript
+interface FrameNode {
+  /** Human-friendly node name shown in Figma */
+  name: string
+  
+  /** Identifies the node as a frame */
+  type: 'FRAME'
+  
+  /** Whether the node is visible in the current document */
+  visible: boolean
+  
+  /** Ordered child nodes within this container */
+  children: DesignNode[]
+}
+```
+
+### VectorNode
+
+Vector node with fill styles.
+
+```typescript
+interface VectorNode {
+  /** Human-friendly node name shown in Figma */
+  name: string
+  
+  /** Identifies the node as a vector */
+  type: 'VECTOR'
+  
+  /** Whether the node is visible in the current document */
+  visible: boolean
+  
+  /** Fill styles applied to the vector */
+  fills: Fill[]
+}
+```
+
+### DesignComponent
+
+Component instance with properties and optional main component reference.
+
+```typescript
+interface DesignComponent<T extends object = Record<string, ComponentPropertyValue>> {
+  /** Human-friendly node name shown in Figma */
+  name: string
+  
+  /** Identifies the node as a component instance */
+  type: 'INSTANCE'
+  
+  /** Whether the node is visible in the current document */
+  visible: boolean
+  
+  /** Ordered child nodes within this container */
+  children: DesignNode[]
+  
+  /** Component property map keyed by property name */
+  properties: T
+  
+  /** Reference to the main component definition, if linked */
+  mainComponent?: {
+    /** ID of the main component this instance is linked to */
+    id: string
+    
+    /** Name of the main component this instance is linked to */
+    name: string
+  } | null
+}
+```
+
+### ComponentPropertyValue
+
+Supported primitive and nested component values.
+
+```typescript
+type ComponentPropertyValue = string | number | boolean | DesignComponent
+```
+
+## Style Types
+
+### Variable
+
+CSS variable reference extracted from Figma.
+
+```typescript
+interface Variable {
+  /** Variable name without the var(--...) wrapper */
+  name: string
+  
+  /** Default value for the variable if defined */
+  value: string
+}
+```
+
+### Fill
+
+Fill style as either a literal color or a variable reference.
+
+```typescript
+interface Fill {
+  /** Hex color string or variable reference describing the fill color */
+  color: string | Variable
+}
+```
+
+## Dev Component Types
+
+### DevComponent
+
+Represents a component in your dev environment.
+
+```typescript
+interface DevComponent<T extends object = Record<string, unknown>> {
+  /** Component tag or name to render */
+  name: string
+  
+  /** Props that should be passed to the component */
+  props: T
+  
+  /** Ordered child components or string literals */
+  children: (DevComponent | string)[]
+}
+```
+
+## Plugin Configuration Types
+
+### Plugin
+
+Main plugin configuration interface.
+
+```typescript
+interface Plugin {
+  /** Human-readable name displayed in the UI */
+  name: string
+  
+  /** Map of code block identifiers to configuration */
+  code: CodeOptions
+}
+```
+
+### CodeOptions
+
+Code block configuration map.
+
+```typescript
+type CodeOptions = Partial<Record<BuiltInCodeBlock, CodeBlockOptions>> & Record<string, CodeBlockOptions>
+
+type BuiltInCodeBlock = 'css' | 'js'
+```
+
+### CodeBlockOptions
+
+Configuration for a single code block.
+
+```typescript
+type CodeBlockOptions = (TransformOptions & {
+  /** The title of the code block (e.g., 'SCSS') */
+  title?: string
+}) | false
+```
+
+Set to `false` to disable a code block.
+
+### TransformOptions
+
+Transformation hooks and language configuration.
+
+```typescript
+type TransformOptions = {
+  /** The language for syntax highlighting */
+  lang?: SupportedLang
+  
+  /** Transform the generated CSS code */
+  transform?: (params: TransformParams) => string
+  
+  /** Transform CSS variable references */
+  transformVariable?: (params: TransformVariableParams) => string
+  
+  /** Transform pixel values to desired units */
+  transformPx?: (params: TransformPxParams) => string
+  
+  /** Transform design components to dev components */
+  transformComponent?: (params: TransformComponentParams) => DevComponent | string
+}
+```
+
+### SupportedLang
+
+Supported syntax highlighting languages.
+
+```typescript
+type SupportedLang =
+  | 'text'
+  | 'tsx'
+  | 'jsx'
+  | 'ts'
+  | 'js'
+  | 'vue'
+  | 'html'
+  | 'css'
+  | 'sass'
+  | 'scss'
+  | 'less'
+  | 'stylus'
+  | 'json'
+```
+
+## Query Types
+
+### NodeQuery
+
+Predicate or property-based query for matching nodes.
+
+```typescript
+type NodeQuery = RequireAtLeastOne<QueryableProperties> | ((node: DesignNode) => boolean)
+
+type QueryableProperties = {
+  type?: SupportedDesignNodeType | SupportedDesignNodeType[] | RegExp
+  name?: string | string[] | RegExp
+  visible?: boolean
+}
+```
+
+### QueryType
+
+Allowed lookup styles for chained queries.
+
+```typescript
+type QueryType = 'child' | 'children' | 'one' | 'all'
+```
+
+## Helper Constants
+
+### RAW_TAG_NAME
+
+Internal tag name for raw markup nodes.
+
+```typescript
+const RAW_TAG_NAME = '__tempad_raw__'
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="definePlugin" icon="plug" href="/api/define-plugin">
+    Create a plugin configuration
+  </Card>
+  <Card title="Transform Hooks" icon="webhook" href="/api/transform-hooks">
+    Transform code generation
+  </Card>
+  <Card title="Query Helpers" icon="magnifying-glass" href="/api/get-structure">
+    Find and query nodes
+  </Card>
+</CardGroup>

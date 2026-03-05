@@ -1,0 +1,311 @@
+---
+title: "Measure to Selection Mode"
+description: "Automatically display spacing between elements without holding Alt key"
+icon: "ruler-combined"
+---
+
+## What It Does
+
+Measure to Selection mode automatically shows the spacing between other nodes and your selected element as you hover over the canvas. This eliminates the need to hold <kbd>Alt</kbd>/<kbd>Option</kbd> every time you want to check distances and padding.
+
+<Frame>
+  <img src="/images/measure-light.png" alt="Measure to selection mode showing automatic spacing" />
+</Frame>
+
+## The Problem It Solves
+
+In Figma's read-only view, measuring spacing requires:
+
+- **Selecting an element** first
+- **Holding <kbd>Alt</kbd>/<kbd>Option</kbd>** continuously
+- **Moving the cursor** to see spacing to other elements
+- **Releasing and re-pressing** <kbd>Alt</kbd> for each measurement session
+
+This becomes tedious when inspecting multiple spacings or working on complex layouts. Similar to [Deep Select mode](/features/deep-select), many users don't know about this shortcut or find the extra key operation cumbersome.
+
+## How to Enable
+
+1. Open TemPad Dev panel
+2. Click the **Preferences** icon (gear icon in the top right)
+3. In the **Tools** section, click the **Measure to selection** button to toggle it on
+
+<Check>
+  When enabled, the Measure button appears highlighted
+</Check>
+
+## How It Works
+
+Once enabled, Measure mode automatically:
+
+1. **Detects when you have an element selected**
+2. **Simulates <kbd>Alt</kbd> key press** when hovering over the canvas
+3. **Shows spacing measurements** between the selected element and elements under your cursor
+4. **Releases** when you press <kbd>Alt</kbd> manually (to access normal behavior)
+
+### Technical Implementation
+
+Measure mode works by:
+
+- Monitoring canvas hover state and active selection
+- Setting a "lock" on the Alt key when hovering over the canvas
+- Managing cursor appearance to reflect the measurement state
+- Temporarily disabling during manual <kbd>Alt</kbd> press for normal cursor operations
+
+```typescript
+// Simplified implementation reference
+function syncAltLock() {
+  const hovered = isCanvasHovered()
+  setLockAltKey(hovered && !altPressed && options.value.measureOn)
+}
+```
+
+## Behavior Details
+
+### When Measure Mode is Active
+
+<Tabs>
+  <Tab title="With Selection">
+    - Hover over other elements to see spacing automatically
+    - Red measurement lines appear showing distances
+    - Pixel values display next to measurement lines
+    - No need to hold any keys
+  </Tab>
+  <Tab title="Manual Alt Press">
+    - Press <kbd>Alt</kbd> to temporarily disable auto-measure
+    - Use normal cursor operations (duplicate hints, etc.)
+    - Release <kbd>Alt</kbd> to return to auto-measure
+  </Tab>
+  <Tab title="No Selection">
+    - Measure mode has no effect without a selected element
+    - Select an element first to see measurements
+  </Tab>
+</Tabs>
+
+### When Measure Mode is Inactive
+
+Measuring behaves like standard Figma:
+- Select an element
+- Hold <kbd>Alt</kbd>/<kbd>Option</kbd> manually to see spacing
+- Move cursor to measure different distances
+- Release <kbd>Alt</kbd> to stop measuring
+
+## Visual Feedback
+
+### Measurement Display
+
+When hovering with Measure mode enabled:
+
+```
+┌─────────────┐
+│  Selected   │
+│   Element   │
+└─────────────┘
+      ↕ 24px      ← Vertical spacing shown
+┌─────────────┐
+│   Hovered   │
+│   Element   │
+└─────────────┘
+```
+
+### Cursor States
+
+The system manages cursor appearance intelligently:
+
+- **Normal cursor**: When measure mode is off or no selection
+- **Measurement cursor**: When auto-measuring (looks like Alt-hover)
+- **Duplicate cursor**: Temporarily shown when pressing <kbd>Alt</kbd> manually
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Design System Verification">
+    Quickly verify that spacing follows design system tokens:
+    
+    **Workflow:**
+    1. Enable Measure mode
+    2. Select a component
+    3. Hover over surrounding elements
+    4. Verify spacing matches 4px, 8px, 16px, 24px grid
+  </Accordion>
+  
+  <Accordion title="Layout Implementation">
+    Extract exact spacing values for CSS/code:
+    
+    **Example:**
+    - Select a button
+    - Hover over adjacent elements
+    - Note margins: 16px top, 24px right
+    - Write CSS: `margin: 16px 24px 0 0`
+  </Accordion>
+  
+  <Accordion title="Responsive Design Review">
+    Check spacing consistency across breakpoints:
+    
+    **Process:**
+    - Enable Measure mode
+    - Select same element in different frames
+    - Compare spacing values quickly
+  </Accordion>
+</AccordionGroup>
+
+## Interaction with Other Features
+
+### Deep Select Mode
+
+Measure mode pairs perfectly with [Deep Select](/features/deep-select):
+
+1. **Deep Select** lets you click once to select nested elements
+2. **Measure mode** automatically shows spacing as you hover
+3. Together: click → select deeply → hover → measure immediately
+
+**Combined workflow:**
+```
+Click (deep select) → Element selected
+Hover next element → Spacing shown automatically
+Click next (deep select) → New element selected
+Hover → New measurements shown
+```
+
+### Code Inspection
+
+Measurements complement the code output:
+
+1. Select an element with spacing
+2. Check visual measurements with Measure mode
+3. Verify in Code panel:
+   ```css
+   margin: 24px 16px;
+   padding: 12px;
+   gap: 8px;
+   ```
+
+## Advanced Features
+
+### Cursor Override System
+
+Measure mode includes an intelligent cursor management system that:
+
+- Detects Figma's duplicate cursor (appears when <kbd>Alt</kbd> is pressed)
+- Learns the CSS class Figma uses for the duplicate cursor
+- Applies a cursor override when in measure mode to prevent confusion
+- Removes override when you manually press <kbd>Alt</kbd>
+
+```typescript
+// Auto-learning duplicate cursor class
+function learnDuplicateClass(host: HTMLElement) {
+  if (duplicateClass) return
+  const added = Array.from(host.classList).filter(c => !classSnapshot.has(c))
+  if (added.length === 1) {
+    duplicateClass = added[0]
+  }
+}
+```
+
+### Interaction Pausing
+
+Measure mode intelligently pauses during:
+
+- **Pointer down events**: Prevents interference with selection
+- **Space bar panning**: Doesn't interfere with canvas navigation
+- **Manual Alt press**: Allows normal Alt-key operations
+
+## Compatibility
+
+<Warning>
+  Measure mode works best in Figma's **read-only view** or when using TemPad Dev as a browser extension.
+</Warning>
+
+### Supported Platforms
+
+- Chrome/Edge browser extension (full support)
+- Figma web app in read-only mode (full support)
+- Figma web app with edit access (partial support)
+- Figma desktop app (not supported)
+
+## Tips and Best Practices
+
+<Tip>
+  **Enable Measure mode for handoff sessions** - Keep it on when reviewing designs with developers to quickly answer spacing questions.
+</Tip>
+
+<Tip>
+  **Use with keyboard navigation** - Select elements with arrow keys, measurements update automatically as you hover.
+</Tip>
+
+<Tip>
+  **Combine with variable display** - Set variable display to "Both" in preferences to see both spacing tokens and pixel values.
+</Tip>
+
+<Note>
+  If you need to perform Alt-based operations (like viewing duplicate distance or creating duplicates), press <kbd>Alt</kbd> manually to temporarily disable auto-measure.
+</Note>
+
+## Common Workflows
+
+### Quick Spacing Audit
+
+```markdown
+1. Enable Measure mode
+2. Enable Deep Select mode
+3. Click on first element (selects deeply)
+4. Hover over surrounding elements
+5. Note spacing values
+6. Click next element
+7. Repeat
+```
+
+### Spacing Documentation
+
+```markdown
+1. Select container element
+2. Hover over children with Measure mode
+3. Take screenshots of measurements
+4. Or note values in code comments:
+   /* Spacing: 24px between cards, 16px padding */
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Measurements not appearing">
+    **Check these:**
+    - Is an element selected?
+    - Is Measure mode enabled (button highlighted)?
+    - Are you hovering over the canvas?
+    - Try selecting a different element
+  </Accordion>
+  
+  <Accordion title="Cursor looks wrong">
+    **Explanation:** The cursor override system learns Figma's cursor classes. If the cursor appears incorrect:
+    - Toggle Measure mode off and on
+    - Refresh the page to reset cursor learning
+  </Accordion>
+  
+  <Accordion title="Alt key doesn't work normally">
+    **Expected behavior:** Pressing <kbd>Alt</kbd> manually temporarily disables Measure mode. Release <kbd>Alt</kbd> to re-enable auto-measuring.
+  </Accordion>
+  
+  <Accordion title="Interferes with selection">
+    **Solution:** Measure mode automatically pauses during pointer down events. If you experience issues, try toggling it off while making selections.
+  </Accordion>
+</AccordionGroup>
+
+## Keyboard Reference
+
+| Key | Behavior with Measure Mode |
+|-----|----------------------------|
+| <kbd>Alt</kbd> | Temporarily disables auto-measure |
+| <kbd>Space</kbd> + drag | Auto-measure pauses during pan |
+| <kbd>Shift</kbd> + click | Normal multi-select behavior |
+| <kbd>Arrow keys</kbd> | Navigate selection, measurements update on hover |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deep Select Mode" icon="hand-pointer" href="/features/deep-select">
+    Select nested elements with a single click
+  </Card>
+  <Card title="Inspect Code" icon="code" href="/features/inspect-code">
+    Extract CSS values including spacing and padding
+  </Card>
+</CardGroup>

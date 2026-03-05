@@ -1,0 +1,217 @@
+---
+title: 'get_code'
+description: 'MCP tool to generate code from Figma designs'
+---
+
+## Overview
+
+The `get_code` MCP tool generates production-ready code from Figma designs. It extracts styles, assets, and structure from selected nodes and transforms them into JSX or Vue components.
+
+<Note>
+This is an MCP (Model Context Protocol) tool used by AI assistants. For plugin development, see [definePlugin](/api/define-plugin).
+</Note>
+
+## Parameters
+
+<ParamField path="nodeId" type="string">
+  Optional target node ID. Omit to use the current single selection when pulling the baseline snapshot.
+</ParamField>
+
+<ParamField path="preferredLang" type="'jsx' | 'vue'">
+  Preferred output language to bias the snapshot. Falls back to the design's hint/detected language, then JSX.
+</ParamField>
+
+<ParamField path="resolveTokens" type="boolean" default={false}>
+  Inline token values instead of references for quick renders. When `false` (default), returns token metadata so you can map into your theming system. When `true`, values are resolved per-node (mode-aware).
+</ParamField>
+
+## Response
+
+<ResponseField name="code" type="string" required>
+  Generated component code in the specified language.
+</ResponseField>
+
+<ResponseField name="lang" type="'vue' | 'jsx'" required>
+  The actual output language used.
+</ResponseField>
+
+<ResponseField name="assets" type="AssetDescriptor[]">
+  Array of asset metadata for images and vectors used in the code.
+  
+  <Expandable title="AssetDescriptor">
+    <ResponseField name="hash" type="string" required>
+      Unique content hash for the asset
+    </ResponseField>
+    
+    <ResponseField name="url" type="string" required>
+      Asset URL (either data URL or uploaded URL)
+    </ResponseField>
+    
+    <ResponseField name="mimeType" type="string" required>
+      MIME type (e.g., 'image/png', 'image/svg+xml')
+    </ResponseField>
+    
+    <ResponseField name="size" type="number" required>
+      File size in bytes
+    </ResponseField>
+    
+    <ResponseField name="width" type="number">
+      Image width in pixels (for raster images)
+    </ResponseField>
+    
+    <ResponseField name="height" type="number">
+      Image height in pixels (for raster images)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="tokens" type="GetTokenDefsResult">
+  Token definitions referenced in the code. Each key is a canonical CSS variable name (e.g., `--color-primary`). Only included when tokens are detected.
+  
+  <Expandable title="TokenEntry">
+    <ResponseField name="kind" type="'color' | 'number' | 'string' | 'boolean'" required>
+      Token value type
+    </ResponseField>
+    
+    <ResponseField name="value" type="string | Record<string, string>" required>
+      Single mode: string value. Multi-mode: map of mode name to value.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="codegen" type="object" required>
+  Code generation configuration used.
+  
+  <Expandable title="Codegen Config">
+    <ResponseField name="plugin" type="string" required>
+      Active plugin name or 'none'
+    </ResponseField>
+    
+    <ResponseField name="config" type="object" required>
+      <ResponseField name="cssUnit" type="'px' | 'rem'" required>
+        CSS unit system used
+      </ResponseField>
+      
+      <ResponseField name="rootFontSize" type="number" required>
+        Root font size for rem calculations
+      </ResponseField>
+      
+      <ResponseField name="scale" type="number" required>
+        Scale factor applied to dimensions
+      </ResponseField>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="warnings" type="GetCodeWarning[]">
+  Array of warnings about the generated code.
+  
+  <Expandable title="GetCodeWarning">
+    <ResponseField name="type" type="string" required>
+      Warning type (e.g., 'truncated', 'auto-layout')
+    </ResponseField>
+    
+    <ResponseField name="message" type="string" required>
+      Human-readable warning message
+    </ResponseField>
+    
+    <ResponseField name="data" type="Record<string, unknown>">
+      Additional context data
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```json
+{
+  "nodeId": "123:456",
+  "preferredLang": "jsx",
+  "resolveTokens": false
+}
+```
+
+## Example Response
+
+```json
+{
+  "code": "<div className=\"container\" style={{ backgroundColor: 'var(--color-background)' }}>\n  <h1>Hello World</h1>\n</div>",
+  "lang": "jsx",
+  "assets": [
+    {
+      "hash": "a1b2c3d4",
+      "url": "https://...",
+      "mimeType": "image/png",
+      "size": 12345,
+      "width": 100,
+      "height": 100
+    }
+  ],
+  "tokens": {
+    "--color-background": {
+      "kind": "color",
+      "value": "#ffffff"
+    },
+    "--spacing-md": {
+      "kind": "number",
+      "value": "1rem"
+    }
+  },
+  "codegen": {
+    "plugin": "default",
+    "config": {
+      "cssUnit": "rem",
+      "rootFontSize": 16,
+      "scale": 1
+    }
+  }
+}
+```
+
+## Usage Notes
+
+<Info>
+**Token Resolution Strategy**
+
+When `resolveTokens: false` (recommended):
+- Code contains CSS variable references like `var(--color-primary)`
+- `tokens` object provides token metadata
+- Map tokens to your design system manually
+
+When `resolveTokens: true`:
+- Values are inlined (mode-aware)
+- Useful for quick previews
+- May not match your token naming conventions
+</Info>
+
+<Warning>
+**Selection Requirements**
+
+- Select exactly one node or provide a single `nodeId`
+- The node must be visible
+- Large/deep trees may be truncated (check `warnings`)
+</Warning>
+
+## Code Generation Pipeline
+
+The tool follows this pipeline:
+
+1. **Tree Building** - Constructs visible node tree with depth limits
+2. **Variable Mapping** - Maps Figma variables to CSS tokens
+3. **Asset Planning** - Identifies images and vectors to export
+4. **Style Collection** - Extracts CSS styles from each node
+5. **Asset Export** - Generates optimized SVGs and raster images
+6. **Rendering** - Transforms tree into component markup
+7. **Token Processing** - Detects and transforms variable references
+8. **Budget Validation** - Ensures output fits within MCP payload limits
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="get_structure" icon="sitemap" href="/api/get-structure">
+    Get node hierarchy and geometry
+  </Card>
+  <Card title="Transform Hooks" icon="webhook" href="/api/transform-hooks">
+    Customize code generation
+  </Card>
+</CardGroup>

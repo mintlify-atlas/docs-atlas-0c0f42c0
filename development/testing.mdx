@@ -1,0 +1,387 @@
+---
+title: Testing
+description: Testing strategy, commands, and guidelines for TemPad Dev
+---
+
+## Overview
+
+TemPad Dev uses Vitest for all testing with a strict coverage model and split runtime strategy.
+
+## Tech Stack
+
+- **Test runner:** Vitest 4.0.18
+- **Browser tests:** @vitest/browser-playwright + Chromium
+- **Coverage provider:** Istanbul
+- **Package manager:** pnpm
+
+## Quick Start
+
+### First-Time Setup
+
+Install browser test runtime (once per machine):
+
+```bash
+pnpm test:ext:setup
+```
+
+### Standard Pre-PR Verification
+
+Run this sequence before submitting changes:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test:run
+pnpm test:coverage
+```
+
+## Command Reference
+
+### Root Commands
+
+Run from repository root:
+
+```bash
+# Watch mode (interactive)
+pnpm test
+
+# Single run (CI)
+pnpm test:run
+
+# Coverage report
+pnpm test:coverage
+
+# Extension node tests only
+pnpm test:ext:node
+
+# Extension browser tests only
+pnpm test:ext:browser
+
+# Install browser runtime
+pnpm test:ext:setup
+```
+
+### Per-Package Commands
+
+#### Extension
+
+```bash
+# All extension tests
+pnpm --filter @tempad-dev/extension test:run
+
+# Node tests only
+pnpm --filter @tempad-dev/extension test:node
+
+# Browser tests only
+pnpm --filter @tempad-dev/extension test:browser
+
+# Browser tests (headed mode for debugging)
+pnpm --filter @tempad-dev/extension test:browser:headed
+
+# Coverage
+pnpm --filter @tempad-dev/extension test:coverage
+
+# Setup
+pnpm --filter @tempad-dev/extension test:setup
+```
+
+#### MCP Server
+
+```bash
+pnpm --filter @tempad-dev/mcp test:run
+pnpm --filter @tempad-dev/mcp test:coverage
+```
+
+#### Plugins
+
+```bash
+pnpm --filter @tempad-dev/plugins test:run
+pnpm --filter @tempad-dev/plugins test:coverage
+```
+
+#### Shared
+
+```bash
+pnpm --filter @tempad-dev/shared test:run
+pnpm --filter @tempad-dev/shared test:coverage
+```
+
+## Test Organization
+
+### File Naming Conventions
+
+Tests live under package-local `tests/` directories:
+
+```
+packages/<package>/
+├── src/
+│   └── index.ts
+└── tests/
+    ├── unit.test.ts          # Node runtime
+    ├── browser.browser.test.ts  # Browser runtime
+    └── helpers/
+        └── fixtures.ts
+```
+
+**Naming rules:**
+- `*.test.ts` - Node runtime tests
+- `*.browser.test.ts` - Browser runtime tests (Playwright)
+
+### Runtime Split
+
+#### Node Runtime
+
+For pure logic, utilities, and server-side code:
+
+- Default Vitest environment
+- No DOM APIs
+- Fast execution
+- Used by: mcp-server, plugins, shared, extension (non-UI)
+
+#### Browser Runtime
+
+For DOM manipulation, browser APIs, and UI components:
+
+- Playwright Chromium
+- Real browser environment
+- Used by: extension UI tests
+- **Never use jsdom** (not supported)
+
+## Coverage Strategy
+
+### Configuration
+
+- **Provider:** Istanbul (required to avoid V8 parse failures)
+- **Config:** Root `vitest.config.ts`
+- **Excludes:** `**/dist/**`, `**/.output/**`
+
+### Coverage Targets
+
+Strict pure coverage enforced on:
+
+#### Extension
+- Pure utility functions
+- Formatters and transformers
+
+#### MCP Server
+- `src/asset-utils.ts`
+- `src/tools.ts`
+- `src/config.ts`
+- `src/request.ts`
+- `src/asset-store.ts`
+- `src/asset-http-server.ts`
+- `src/shared.ts`
+
+#### Shared
+- `src/index.ts`
+- `src/mcp/constants.ts`
+- `src/mcp/errors.ts`
+- `src/mcp/index.ts`
+- `src/mcp/protocol.ts`
+- `src/mcp/tools.ts`
+- `src/figma/index.ts`
+- `src/figma/color.ts`
+- `src/figma/gradient.ts`
+- `src/figma/stroke.ts`
+- `src/figma/style-resolver.ts`
+
+#### Plugins
+- `src/index.ts`
+
+### Running Coverage
+
+```bash
+# Workspace coverage
+pnpm test:coverage
+
+# Package-specific coverage
+pnpm --filter @tempad-dev/extension test:coverage
+pnpm --filter @tempad-dev/mcp test:coverage
+```
+
+Coverage reports are generated in `coverage/` (gitignored).
+
+## Test Authoring Rules
+
+### Deterministic Tests
+
+Tests must be deterministic:
+
+- **No system clock dependence** - Use mocked time
+- **No random IDs** - Use fixed seeds or mocks
+- **No network calls** - Mock external services
+- **No filesystem side effects** - Use in-memory fixtures
+
+### Pure Function Testing
+
+For pure functions, enforce strict coverage:
+
+```typescript
+// Good: Deterministic, pure function test
+import { describe, it, expect } from 'vitest'
+import { formatColor } from '../src/color'
+
+describe('formatColor', () => {
+  it('converts RGB to hex', () => {
+    expect(formatColor({ r: 255, g: 0, b: 0 })).toBe('#ff0000')
+  })
+})
+```
+
+### Browser Testing
+
+For DOM/UI code, use Playwright browser tests:
+
+```typescript
+// Good: Browser test with real DOM
+import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import MyComponent from '../components/MyComponent.vue'
+
+describe('MyComponent', () => {
+  it('renders correctly', async () => {
+    const wrapper = mount(MyComponent)
+    expect(wrapper.find('.title').text()).toBe('Hello')
+  })
+})
+```
+
+**File:** `tests/components/MyComponent.browser.test.ts`
+
+### Regression Tests
+
+Add regression assertions in the same PR as behavior changes:
+
+```typescript
+it('handles edge case from issue #123', () => {
+  // Test that previously failed
+  expect(processNode(edgeCaseInput)).toMatchSnapshot()
+})
+```
+
+## Required Checks by Change Type
+
+### Always Required
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test:run
+```
+
+### Pure Utility/Formatter Changes
+
+```bash
+pnpm test:coverage
+```
+
+Ensure coverage thresholds are maintained.
+
+### Extension Build/Runtime Changes
+
+```bash
+pnpm build:ext
+
+# If packaging affected
+pnpm zip
+```
+
+### DOM/Browser Behavior Changes
+
+```bash
+pnpm --filter @tempad-dev/extension test:browser
+```
+
+Use Playwright, never jsdom.
+
+### Cross-Package Contract Changes
+
+Validate in order:
+
+1. `pnpm --filter @tempad-dev/shared test:run`
+2. `pnpm --filter @tempad-dev/mcp test:run`
+3. `pnpm --filter @tempad-dev/extension test:run`
+
+## Troubleshooting
+
+### Coverage Parse Errors
+
+**Symptom:** Files unexpectedly excluded or V8 parse errors
+
+**Solution:**
+
+1. Confirm provider is `istanbul` in `vitest.config.ts`
+2. Clean install:
+   ```bash
+   pnpm install
+   pnpm test:coverage
+   ```
+
+### Build Artifacts in Coverage
+
+**Symptom:** `dist/` or `.output/` files appear in reports
+
+**Solution:**
+
+1. Check root `vitest.config.ts` excludes
+2. Ensure tests import from `src/`, not `dist/`
+
+### Package vs Root Coverage Differences
+
+**Symptom:** Package coverage passes, root coverage fails
+
+**Solution:**
+
+Root run aggregates workspace projects. Validate against root config first:
+
+```bash
+pnpm test:coverage
+```
+
+### Browser Tests Fail to Launch
+
+**Symptom:** Playwright errors or missing browser
+
+**Solution:**
+
+```bash
+# Reinstall browser runtime
+pnpm test:ext:setup
+
+# Verify installation
+pnpm test:ext:browser
+```
+
+### Tests Pass Locally, Fail in CI
+
+**Common causes:**
+
+- Non-deterministic tests (time, random, network)
+- Missing setup step (browser runtime)
+- Environment-specific paths or configs
+
+**Debug:**
+
+```bash
+# Run in CI mode
+CI=true pnpm test:run
+```
+
+## Best Practices
+
+1. **Write tests first** for new features (TDD)
+2. **Keep tests focused** - One assertion per test when possible
+3. **Use descriptive names** - `it('returns null when input is empty')`
+4. **Avoid test interdependence** - Each test should be isolated
+5. **Mock external dependencies** - Network, filesystem, browser APIs
+6. **Update tests with code** - Never leave tests broken
+7. **Add regression tests** - For every bug fix
+8. **Use snapshots sparingly** - Only for stable output formats
+
+## Related Documentation
+
+- Testing architecture: `docs/testing/architecture.md` (in source repo)
+- Extension requirements: `docs/extension/requirements.md` (in source repo)
+- Extension design: `docs/extension/design.md` (in source repo)
+- [Architecture](/development/architecture)
+- [Building](/development/building)

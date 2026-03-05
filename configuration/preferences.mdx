@@ -1,0 +1,136 @@
+---
+title: Preferences
+description: Configure TemPad Dev preferences to customize your workflow
+---
+
+TemPad Dev provides several preference options to customize how the extension works within Figma. Access preferences by clicking the settings icon in the TemPad Dev panel.
+
+## Tools
+
+The Tools section contains interactive features that modify how you interact with Figma elements.
+
+### Deep Select Mode
+
+In Figma's read-only view, selecting nodes requires double-clicking to drill down, and it often takes repeated double-clicks to select the lowest-level node. Although Figma offers a <kbd>⌘</kbd> + click shortcut, many users are unaware of this feature and need to perform extra key operations each time.
+
+TemPad Dev's deep select mode automatically applies this behavior when hovering over the canvas, eliminating the need for manual key combinations.
+
+<img src="/images/deep-select.png" alt="Deep select mode in preferences" />
+
+**How it works:**
+- When enabled, TemPad Dev locks the <kbd>⌘</kbd> (Meta) key state while hovering over the Figma canvas
+- This allows you to click directly on deeply nested elements without double-clicking
+- The feature pauses when you press the spacebar (for panning) and resumes when released
+- Automatically detects duplicate cursors to avoid conflicts with native Figma operations
+
+**Implementation details:**
+
+The deep select feature is implemented in `composables/key-lock.ts` and monitors:
+- Canvas hover state
+- Spacebar key state (to pause during panning)
+- Meta key state synchronization
+
+```typescript
+function syncMetaLock() {
+  const hovered = isCanvasHovered()
+  setLockMetaKey(hovered && options.value.deepSelectOn)
+}
+```
+
+### Measure to Selection Mode
+
+In Figma's read-only view, you need to hold <kbd>⌥</kbd> (Alt/Option) and move the cursor to display the spacing between other nodes and the selected node. TemPad Dev's measure to selection mode eliminates this requirement.
+
+<img src="/images/measure-to-selection.png" alt="Measure to selection mode in preferences" />
+
+**How it works:**
+- When enabled, TemPad Dev locks the <kbd>⌥</kbd> key state while hovering over the canvas
+- Spacing measurements appear automatically without holding any keys
+- The feature pauses when you manually press <kbd>⌥</kbd> to avoid conflicts
+- Automatically resumes when you release the key
+
+**Implementation details:**
+
+The measure feature tracks Alt key presses to avoid interference:
+
+```typescript
+function syncAltLock() {
+  const hovered = isCanvasHovered()
+  setLockAltKey(hovered && !altPressed && options.value.measureOn)
+}
+```
+
+## Configuration Interface
+
+Preferences are stored in browser local storage and persist across sessions. The configuration structure is defined in `ui/state.ts`:
+
+```typescript
+export type Options = {
+  minimized: boolean
+  panelPosition: {
+    left: number
+    top: number
+    width?: number
+  }
+  prefOpen: boolean
+  deepSelectOn: boolean
+  measureOn: boolean
+  cssUnit: 'px' | 'rem'
+  rootFontSize: number
+  scale: number
+  variableDisplay: 'reference' | 'resolved' | 'both'
+  mcpOn: boolean
+  plugins: {
+    [source: string]: PluginData
+  }
+  activePluginSource: string | null
+}
+```
+
+### Default Values
+
+The extension initializes with these default preferences:
+
+```typescript
+{
+  minimized: false,
+  panelPosition: {
+    left: window.innerWidth - ui.nativePanelWidth - ui.tempadPanelWidth,
+    top: ui.topBoundary,
+    width: ui.tempadPanelWidth
+  },
+  prefOpen: false,
+  deepSelectOn: false,
+  measureOn: false,
+  cssUnit: 'px',
+  rootFontSize: 16,
+  scale: 1,
+  variableDisplay: 'reference',
+  mcpOn: false,
+  plugins: {},
+  activePluginSource: null
+}
+```
+
+## Accessing Preferences
+
+Preferences are accessed using Vue's composition API with VueUse's `useStorage` composable:
+
+```typescript
+import { options } from '@/ui/state'
+
+// Reading a preference
+const isDeepSelectEnabled = options.value.deepSelectOn
+
+// Updating a preference
+options.value.cssUnit = 'rem'
+```
+
+Changes to preferences are automatically persisted to local storage and reflected across the UI.
+
+## Related Topics
+
+- [Units](/configuration/units) - Configure CSS unit conversion
+- [Variables](/configuration/variables) - Control variable display modes
+- [MCP Server](/mcp/setup) - Configure the Model Context Protocol server
+- [Plugins](/plugins/overview) - Install and manage plugins

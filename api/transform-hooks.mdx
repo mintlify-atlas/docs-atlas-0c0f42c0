@@ -1,0 +1,330 @@
+---
+title: 'Transform Hooks'
+description: 'Transform generated code with custom hooks'
+---
+
+## Overview
+
+Transform hooks allow you to customize how TemPad Dev generates code from Figma designs. Each hook receives specific parameters and returns transformed output.
+
+## transform
+
+Transform the generated CSS code and parsed style properties.
+
+### Signature
+
+```typescript
+transform?: (params: TransformParams) => string
+```
+
+### Parameters
+
+<ParamField path="params" type="TransformParams" required>
+  <Expandable title="TransformParams Properties">
+    <ParamField path="code" type="string" required>
+      The generated CSS code
+      
+      ```typescript
+      'background-color: red; color: blue;'
+      ```
+    </ParamField>
+    
+    <ParamField path="style" type="Record<string, string>" required>
+      The parsed CSS properties
+      
+      ```typescript
+      { 'background-color': 'red', 'color': 'blue' }
+      ```
+    </ParamField>
+    
+    <ParamField path="options" type="object" required>
+      <Expandable title="Options">
+        <ParamField path="useRem" type="boolean" required>
+          True when pixel values should be converted to rem units
+        </ParamField>
+        
+        <ParamField path="rootFontSize" type="number" required>
+          Root font size used when converting pixels to rem units
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="code" type="string">
+  Transformed CSS code string
+</ResponseField>
+
+### Example
+
+```typescript
+transform: ({ code, style, options }) => {
+  // Add vendor prefixes
+  if (style.display === 'flex') {
+    return code + ' -webkit-box-orient: vertical;'
+  }
+  return code
+}
+```
+
+---
+
+## transformVariable
+
+Transform CSS variable references to match your theming system.
+
+### Signature
+
+```typescript
+transformVariable?: (params: TransformVariableParams) => string
+```
+
+### Parameters
+
+<ParamField path="params" type="TransformVariableParams" required>
+  <Expandable title="TransformVariableParams Properties">
+    <ParamField path="code" type="string" required>
+      The generated CSS variable code
+      
+      ```typescript
+      'var(--color-primary, #6699cc)'
+      ```
+    </ParamField>
+    
+    <ParamField path="name" type="string" required>
+      The variable name without the `var()` wrapper
+      
+      ```typescript
+      'color-primary'
+      ```
+    </ParamField>
+    
+    <ParamField path="value" type="string">
+      The variable fallback value, if defined
+      
+      ```typescript
+      '#6699cc'
+      ```
+    </ParamField>
+    
+    <ParamField path="options" type="object" required>
+      <Expandable title="Options">
+        <ParamField path="useRem" type="boolean" required>
+          True when pixel values should be converted to rem units
+        </ParamField>
+        
+        <ParamField path="rootFontSize" type="number" required>
+          Root font size used when converting pixels to rem units
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="code" type="string">
+  Transformed variable reference
+</ResponseField>
+
+### Example
+
+```typescript
+// CSS variables to SCSS variables
+transformVariable: ({ name }) => {
+  return `$${name.replace(/^--/, '')}`
+}
+// Input:  'var(--color-primary, #6699cc)'
+// Output: '$color-primary'
+
+// CSS variables to design tokens
+transformVariable: ({ name, value }) => {
+  const tokenPath = name.replace(/^--/, '').replace(/-/g, '.')
+  return `theme.${tokenPath}`
+}
+// Input:  'var(--color-text-primary)'
+// Output: 'theme.color.text.primary'
+```
+
+---
+
+## transformPx
+
+Transform pixel values to your desired unit system.
+
+### Signature
+
+```typescript
+transformPx?: (params: TransformPxParams) => string
+```
+
+### Parameters
+
+<ParamField path="params" type="TransformPxParams" required>
+  <Expandable title="TransformPxParams Properties">
+    <ParamField path="value" type="number" required>
+      The numeric pixel value
+      
+      ```typescript
+      16
+      ```
+    </ParamField>
+    
+    <ParamField path="options" type="object" required>
+      <Expandable title="Options">
+        <ParamField path="useRem" type="boolean" required>
+          True when pixel values should be converted to rem units
+        </ParamField>
+        
+        <ParamField path="rootFontSize" type="number" required>
+          Root font size used when converting pixels to rem units (typically 16)
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="value" type="string">
+  Transformed value with unit
+</ResponseField>
+
+### Example
+
+```typescript
+// Convert to rem
+transformPx: ({ value, options }) => {
+  if (options.useRem) {
+    return `${value / options.rootFontSize}rem`
+  }
+  return `${value}px`
+}
+// Input:  16
+// Output: '1rem' (when useRem is true)
+
+// Custom scaling
+transformPx: ({ value }) => {
+  return `${value * 0.75}px`
+}
+// Input:  16
+// Output: '12px'
+```
+
+---
+
+## transformComponent
+
+Transform Figma component instances into custom dev components.
+
+### Signature
+
+```typescript
+transformComponent?: (params: TransformComponentParams) => DevComponent | string
+```
+
+### Parameters
+
+<ParamField path="params" type="TransformComponentParams" required>
+  <Expandable title="TransformComponentParams Properties">
+    <ParamField path="component" type="DesignComponent" required>
+      The design component with properties and children. See [Types Reference](/api/types#designcomponent) for full structure.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Returns
+
+<ResponseField name="result" type="DevComponent | string">
+  A DevComponent object or raw string markup
+</ResponseField>
+
+### Example
+
+```typescript
+import { h } from '@tempad-dev/plugins'
+
+transformComponent: ({ component }) => {
+  // Map Figma Button to your design system
+  if (component.mainComponent?.name === 'Button') {
+    const variant = component.properties.variant || 'primary'
+    const label = component.properties.label || 'Button'
+    
+    return h('Button', { variant }, [label])
+  }
+  
+  // Return null to use default rendering
+  return null
+}
+```
+
+### Using the h() Helper
+
+The `h()` function creates DevComponent trees with a clean syntax:
+
+```typescript
+import { h } from '@tempad-dev/plugins'
+
+// Simple element
+const text = h('Text', 'Hello world')
+
+// With props
+const button = h('Button', { variant: 'primary' }, ['Submit'])
+
+// Nested children
+const container = h('Container', { size: 'lg' }, [
+  h('Heading', { level: 2 }, ['Title']),
+  h('Button', { variant: 'primary' }, ['Submit'])
+])
+```
+
+## Common Patterns
+
+### Combining Hooks
+
+```typescript
+export default definePlugin({
+  name: 'Custom Theme',
+  code: {
+    scss: {
+      title: 'SCSS',
+      lang: 'scss',
+      transformVariable: ({ name }) => `$${name.replace(/^--/, '')}`,
+      transformPx: ({ value, options }) => 
+        options.useRem ? `${value / options.rootFontSize}rem` : `${value}px`,
+      transform: ({ code, style }) => {
+        // Post-process the entire CSS block
+        return code.replace(/px/g, 'rem')
+      }
+    }
+  }
+})
+```
+
+### Component Mapping
+
+```typescript
+transformComponent: ({ component }) => {
+  const componentMap = {
+    'Button': (props) => h('UIButton', { ...props }),
+    'Input': (props) => h('TextField', { ...props }),
+    'Card': (props) => h('Surface', { elevation: 1, ...props })
+  }
+  
+  const transform = componentMap[component.mainComponent?.name]
+  return transform ? transform(component.properties) : null
+}
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="definePlugin" icon="plug" href="/api/define-plugin">
+    Create a plugin configuration
+  </Card>
+  <Card title="Types Reference" icon="brackets-curly" href="/api/types">
+    Full type definitions
+  </Card>
+</CardGroup>

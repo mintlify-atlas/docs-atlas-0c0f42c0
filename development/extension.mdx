@@ -1,0 +1,393 @@
+---
+title: Extension Package
+description: Browser extension implementation for Figma integration
+---
+
+## Overview
+
+The extension package (`@tempad-dev/extension`) is a browser extension that runs on `https://www.figma.com/*` and implements MCP tool behavior for AI-powered code generation.
+
+**Location:** `packages/extension/`
+
+## Responsibilities
+
+- Implementing MCP tool behavior (`get_code`, `get_structure`, `get_screenshot`, `token`)
+- Maintaining UI code generation features
+- Keeping Figma script rewrite rules stable
+- Asset upload integration
+- WebSocket communication with MCP server
+
+## Tech Stack
+
+- **Language:** TypeScript
+- **UI Framework:** Vue 3
+- **Build Tool:** WXT (Web Extension Toolkit)
+- **Codegen:** Web Worker + `@tempad-dev/plugins`
+- **MCP Integration:** `@modelcontextprotocol/sdk` (via hub), WebSocket transport
+- **Styling:** Tailwind-compatible class generation
+
+## Directory Structure
+
+```
+packages/extension/
+├── mcp/                      # MCP tool implementations
+│   ├── tools/                # Tool handlers
+│   │   ├── get_code.ts       # Code generation tool
+│   │   ├── get_structure.ts  # Structure extraction tool
+│   │   ├── get_screenshot.ts # Screenshot capture (internal)
+│   │   └── token.ts          # Token management
+│   ├── runtime.ts            # Tool routing and validation
+│   ├── assets.ts             # Asset upload integration
+│   └── transform-variables/  # Variable transformation
+├── codegen/                  # Code generation pipeline
+├── components/               # Vue UI components
+│   ├── icons/
+│   └── sections/
+├── composables/              # Vue composables
+├── rewrite/                  # Figma script rewrite rules
+│   └── figma.ts
+├── entrypoints/              # Extension entry points
+│   ├── content.ts            # Content script
+│   ├── background.ts         # Background service worker
+│   └── ui/                   # UI entry points
+├── worker/                   # Web worker for code generation
+├── utils/                    # Utility functions
+├── types/                    # TypeScript type definitions
+├── plugins/                  # Plugin integrations
+├── public/
+│   └── rules/                # Rewrite rule manifests
+├── tests/                    # Test files
+│   ├── mcp/
+│   ├── codegen/
+│   ├── browser.test.ts       # Browser runtime tests
+│   └── unit.test.ts          # Node runtime tests
+└── package.json
+```
+
+## Key Commands
+
+### Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start dev server (from root)
+pnpm dev
+
+# Or from package directory
+pnpm --filter @tempad-dev/extension dev
+```
+
+### Building
+
+```bash
+# Build extension (from root)
+pnpm build:ext
+
+# Or from package directory
+pnpm --filter @tempad-dev/extension build
+
+# Build rewrite rules only
+pnpm --filter @tempad-dev/extension build:rewrite
+```
+
+### Testing
+
+```bash
+# All tests
+pnpm --filter @tempad-dev/extension test:run
+
+# Node runtime tests
+pnpm --filter @tempad-dev/extension test:node
+
+# Browser tests (Playwright)
+pnpm --filter @tempad-dev/extension test:browser
+
+# Browser tests (headed mode for debugging)
+pnpm --filter @tempad-dev/extension test:browser:headed
+
+# Setup browser runtime (first time)
+pnpm --filter @tempad-dev/extension test:setup
+
+# Coverage
+pnpm --filter @tempad-dev/extension test:coverage
+```
+
+### Quality Checks
+
+```bash
+# Typecheck
+pnpm --filter @tempad-dev/extension typecheck
+
+# Lint
+pnpm --filter @tempad-dev/extension lint
+pnpm --filter @tempad-dev/extension lint:fix
+
+# Format
+pnpm --filter @tempad-dev/extension format
+pnpm --filter @tempad-dev/extension format:check
+```
+
+### Worker Sandbox Validation
+
+```bash
+# Check worker sandbox isolation
+pnpm --filter @tempad-dev/extension check:worker-sandbox
+```
+
+## MCP Tool Implementation
+
+### Tool Structure
+
+Tools are implemented in `mcp/tools/` and registered in `mcp/runtime.ts`:
+
+```typescript
+// mcp/tools/get_code.ts
+export async function getCode(
+  params: GetCodeParameters
+): Promise<GetCodeResult> {
+  // 1. Query Figma API
+  // 2. Generate code
+  // 3. Upload assets
+  // 4. Return result
+}
+```
+
+### Tool Routing
+
+`mcp/runtime.ts` handles:
+- Tool validation
+- Parameter parsing
+- Error handling
+- Result formatting
+
+### Asset Pipeline
+
+`mcp/assets.ts` manages:
+- Asset upload to MCP server
+- `asset://` URI generation
+- Omission of large binaries from results
+
+**Example:**
+
+```typescript
+import { uploadAsset } from './assets'
+
+const assetUri = await uploadAsset({
+  data: imageData,
+  mimeType: 'image/png',
+  filename: 'screenshot.png'
+})
+
+// Return URI, not base64
+return {
+  screenshot: assetUri  // "asset://abc123"
+}
+```
+
+## Code Generation
+
+### UI Code Generation
+
+Separate pipeline from MCP tools:
+
+- **Directory:** `codegen/`
+- **Worker:** `worker/`
+- **Output:** Tailwind-compatible classes
+
+### MCP Code Generation
+
+Via `get_code` tool:
+
+- Uses `@tempad-dev/plugins` for transformations
+- Supports React, Vue, HTML output formats
+- Includes variable transformation hooks
+
+**Do not reuse UI codegen logic for MCP without clear reason.**
+
+## Rewrite Rules
+
+### Purpose
+
+Rewrite rules intercept and modify Figma script execution for enhanced functionality.
+
+### Implementation
+
+- **Source:** `rewrite/figma.ts`
+- **Build:** esbuild compiles to IIFE format
+- **Output:** `dist/figma.js`
+- **Manifest:** `public/rules/figma.legacy.json`
+
+### Build Command
+
+```bash
+pnpm --filter @tempad-dev/extension build:rewrite
+```
+
+Compiles:
+```
+rewrite/figma.ts → dist/figma.js (IIFE bundle)
+```
+
+Copies manifests:
+```
+public/rules/figma.legacy.json → dist/figma.json
+public/rules/figma.legacy.json → dist/figma.comply.json
+```
+
+## Code Style Guidelines
+
+### Prefer Explicit Helpers
+
+**Good:**
+
+```typescript
+function isExplicitAutoLayout(node: SceneNode): boolean {
+  return 'layoutMode' in node && node.layoutMode !== 'NONE'
+}
+```
+
+**Avoid:**
+
+```typescript
+const isAuto = (n) => n.layoutMode && n.layoutMode !== 'NONE'
+```
+
+### Omit Empty Fields in MCP Results
+
+**Good:**
+
+```typescript
+return {
+  lang,
+  code,
+  ...(assets.length ? { assets } : {}),
+  ...(warnings?.length ? { warnings } : {})
+}
+```
+
+**Avoid:**
+
+```typescript
+return {
+  lang,
+  code,
+  assets: [],      // Empty array
+  warnings: null   // Null value
+}
+```
+
+## Testing Strategy
+
+### Node Runtime Tests
+
+**File pattern:** `tests/**/*.test.ts`
+
+**Use for:**
+- Pure logic
+- Utilities
+- Formatters
+- MCP tool logic (non-DOM)
+
+### Browser Runtime Tests
+
+**File pattern:** `tests/**/*.browser.test.ts`
+
+**Use for:**
+- DOM manipulation
+- Vue components
+- Browser APIs
+- Extension UI
+
+**Runtime:** Playwright Chromium (never jsdom)
+
+**Config:** `vitest.browser.config.ts`
+
+### Test Determinism
+
+- No system clock dependence
+- No random IDs without fixed seed
+- No network or filesystem side effects in unit tests
+- Behavior-driven assertions
+
+## Boundaries and Constraints
+
+### Schema Changes
+
+Never change `packages/shared` schemas without:
+1. Updating `packages/mcp-server`
+2. Documenting the change
+3. Validating cross-package compatibility
+
+### Dependencies
+
+Do not add new dependencies without approval.
+
+### Asset Handling
+
+Do not embed large binaries in MCP results. Use the asset pipeline:
+
+```typescript
+// Bad
+return { image: base64Data }  // Large payload
+
+// Good
+const uri = await uploadAsset({ data, mimeType, filename })
+return { image: uri }  // "asset://..."
+```
+
+### Pipeline Separation
+
+Do not conflate UI codegen and MCP codegen pipelines unless there's a clear reason.
+
+## Verification Checklist
+
+### Always Run
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm test:run
+```
+
+### UI/Codegen Changes
+
+```bash
+pnpm dev
+```
+
+Validate in Figma:
+1. Open TemPad Dev panel
+2. Test impacted section (e.g., "Inspect → Code")
+
+### Build/Packaging Changes
+
+```bash
+pnpm build:ext
+pnpm zip
+```
+
+### Rewrite Subsystem Changes
+
+```bash
+pnpm --filter @tempad-dev/extension build:rewrite
+
+# Optional (requires credentials)
+pnpm --filter @tempad-dev/extension tsx scripts/check-rewrite.ts
+```
+
+Requires: `FIGMA_EMAIL`, `FIGMA_PASSWORD`, `FIGMA_FILE_KEY`
+
+## Related Documentation
+
+**In source repo:**
+- MCP get_code requirements: `docs/extension/requirements.md`
+- MCP get_code design: `docs/extension/design.md`
+- MCP context/output strategy: `docs/extension/mcp-context-strategy.md`
+- Testing architecture: `docs/testing/architecture.md`
+
+**In this site:**
+- [Architecture](/development/architecture)
+- [Testing](/development/testing)
+- [Building](/development/building)

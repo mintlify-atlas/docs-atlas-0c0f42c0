@@ -1,0 +1,398 @@
+---
+title: Creating Plugins
+description: Build custom code generators with the TemPad Dev plugin SDK
+---
+
+## Installation
+
+Install the `@tempad-dev/plugins` package to get full type support:
+
+<CodeGroup>
+```bash npm
+npm install -D @tempad-dev/plugins
+```
+
+```bash pnpm
+pnpm add -D @tempad-dev/plugins
+```
+
+```bash yarn
+yarn add -D @tempad-dev/plugins
+```
+</CodeGroup>
+
+## Basic plugin structure
+
+Every plugin exports an object with a `name` and a `code` configuration:
+
+```ts
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'My Plugin',
+  code: {
+    // Built-in blocks you can override
+    css: { /* configuration */ },
+    js: false,  // or hide them entirely
+    
+    // Custom blocks you can add
+    tailwind: { /* configuration */ },
+    component: { /* configuration */ }
+  }
+})
+```
+
+<Note>
+  Your plugin file must be a valid ES module and export the plugin object as the `default` export or `plugin` named export.
+</Note>
+
+## Transform hooks
+
+Plugins provide four hooks for customizing code output:
+
+### `transform` - Main code transformation
+
+Transform the entire style object into a custom format.
+
+```ts
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'SCSS Converter',
+  code: {
+    css: {
+      title: 'SCSS',
+      lang: 'scss',
+      transform({ code, style, options }) {
+        // code: "background-color: red; color: blue;"
+        // style: { "background-color": "red", "color": "blue" }
+        // options: { useRem: true, rootFontSize: 16 }
+        
+        return Object.entries(style)
+          .map(([prop, value]) => `  ${prop}: ${value};`)
+          .join('\n')
+      }
+    }
+  }
+})
+```
+
+**Parameters:**
+- `code` - The generated CSS string
+- `style` - Parsed CSS properties as a key-value object
+- `options.useRem` - Whether user enabled rem conversion
+- `options.rootFontSize` - Root font size for rem calculations
+
+### `transformVariable` - Variable conversion
+
+Convert CSS variables to your preferred format.
+
+```ts
+export default definePlugin({
+  name: 'Sass Variables',
+  code: {
+    css: {
+      transformVariable({ code, name, value, options }) {
+        // code: "var(--color-primary, #6699cc)"
+        // name: "color-primary"
+        // value: "#6699cc" (optional)
+        
+        // Convert to Sass variable
+        return `$${name}`
+      }
+    }
+  }
+})
+```
+
+**Parameters:**
+- `code` - Full `var(--token, fallback)` CSS snippet
+- `name` - Variable name without `var(--...)` wrapper
+- `value` - Default fallback value (if defined)
+- `options` - Same as transform hook
+
+### `transformPx` - Pixel value conversion
+
+Customize how pixel values are converted.
+
+```ts
+export default definePlugin({
+  name: 'Custom Scaling',
+  code: {
+    css: {
+      transformPx({ value, options }) {
+        // value: 16 (numeric pixel value)
+        // options.useRem: true/false
+        // options.rootFontSize: 16
+        
+        if (options.useRem) {
+          return `${value / options.rootFontSize}rem`
+        }
+        
+        // Apply 2x scaling for retina
+        return `${value * 2}px`
+      }
+    }
+  }
+})
+```
+
+**Parameters:**
+- `value` - Numeric pixel value
+- `options` - User preferences for rem conversion
+
+### `transformComponent` - Component code generation
+
+Generate framework-specific component code from Figma instances.
+
+```ts
+import { definePlugin, h, findChild, type TextNode } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'React Components',
+  code: {
+    component: {
+      title: 'Component',
+      lang: 'tsx',
+      transformComponent({ component }) {
+        // component: DesignComponent (Figma instance)
+        // component.properties: { variant: 'primary', size: 'lg' }
+        // component.children: [...nested nodes]
+        
+        const title = findChild<TextNode>(component, { type: 'TEXT' })
+        
+        return h('Button', 
+          { 
+            variant: component.properties.variant,
+            size: component.properties.size 
+          }, 
+          [title?.characters || 'Click me']
+        )
+      }
+    }
+  }
+})
+```
+
+**Parameters:**
+- `component` - The design component (Figma instance) being inspected
+
+**Return value:**
+- `DevComponent` - Tree built with `h()` helper
+- `string` - Raw code string
+
+## Working with design nodes
+
+The SDK provides utilities for querying Figma node structures:
+
+### Node types
+
+```ts
+import type {
+  DesignNode,      // Union of all node types
+  DesignComponent, // Component instance (type: 'INSTANCE')
+  TextNode,        // Text node (type: 'TEXT')
+  FrameNode,       // Frame node (type: 'FRAME')
+  GroupNode,       // Group node (type: 'GROUP')
+  VectorNode       // Vector node (type: 'VECTOR')
+} from '@tempad-dev/plugins'
+```
+
+### Finding nodes
+
+```ts
+import { 
+  findChild,    // First direct child matching query
+  findChildren, // All direct children matching query
+  findOne,      // First node in tree (depth-first)
+  findAll       // All nodes in tree (depth-first)
+} from '@tempad-dev/plugins'
+
+// Property-based queries
+const title = findChild(component, { type: 'TEXT', name: 'Title' })
+const icons = findChildren(toolbar, { type: 'VECTOR' })
+
+// Regular expression queries
+const header = findOne(page, { name: /header/i })
+
+// Array matching
+const button = findOne(frame, { name: ['Submit', 'Cancel', 'OK'] })
+
+// Predicate functions
+const hidden = findAll(component, (node) => !node.visible)
+```
+
+### Chained queries
+
+```ts
+import { queryOne, queryAll } from '@tempad-dev/plugins'
+
+// Find footer, then all buttons inside it
+const buttons = queryAll(page, [
+  { query: 'children', name: 'Footer' },
+  { query: 'all', type: 'INSTANCE', name: /Button/ }
+])
+
+// Find first matching node in pipeline
+const logo = queryOne(page, [
+  { query: 'one', name: /header/i },
+  { query: 'child', type: 'VECTOR', name: 'Logo' }
+])
+```
+
+**Query types:**
+- `child` - First direct child
+- `children` - All direct children  
+- `one` - First in tree (depth-first)
+- `all` - All in tree (depth-first)
+
+## Building component trees
+
+Use the `h()` helper to build component trees that TemPad Dev serializes to JSX/Vue:
+
+```ts
+import { h } from '@tempad-dev/plugins'
+
+// Simple element
+h('Button')
+// <Button />
+
+// With children string
+h('Button', 'Submit')
+// <Button>Submit</Button>
+
+// With props
+h('Button', { variant: 'primary', size: 'lg' })
+// <Button variant="primary" size="lg" />
+
+// With props and children
+h('Card', { padding: 'md' }, [
+  h('Heading', { level: 2 }, ['Dashboard']),
+  h('Text', 'Welcome back')
+])
+// <Card padding="md">
+//   <Heading level={2}>Dashboard</Heading>
+//   <Text>Welcome back</Text>
+// </Card>
+
+// Nested components
+h('Container', { size: 'lg' }, [
+  h('Header', [
+    h('Logo'),
+    h('Nav', [
+      h('NavItem', { href: '/' }, ['Home']),
+      h('NavItem', { href: '/about' }, ['About'])
+    ])
+  ])
+])
+```
+
+## Raw markup output
+
+For advanced cases where you need raw HTML/JSX, use the `raw()` helper:
+
+```ts
+import { raw } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'Raw Output',
+  code: {
+    component: {
+      transformComponent({ component }) {
+        // Output raw JSX string
+        return raw('<Button variant="primary">Click me</Button>')
+      }
+    }
+  }
+})
+```
+
+## JavaScript variable interpolation
+
+Wrap variable names in `\0` characters to convert them into template string interpolation:
+
+```ts
+transform({ style }) {
+  // Return: 'calc(\0spacing\0 + 10px)'
+  // Output in JS: `calc(${spacing} + 10px)`
+  return `calc(\0spacing\0 + 10px)`
+}
+```
+
+This is useful when generating JavaScript code that references variables.
+
+## Complete example
+
+Here's a full plugin that demonstrates multiple hooks:
+
+```ts
+import { definePlugin, h, findChild, type TextNode } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'Design System Plugin',
+  code: {
+    // Override CSS output
+    css: {
+      title: 'Design Tokens',
+      lang: 'css',
+      transform({ style }) {
+        return Object.entries(style)
+          .map(([prop, value]) => `${prop}: ${value};`)
+          .join('\n')
+      },
+      transformVariable({ name }) {
+        // Convert var(--spacing-md) to token.spacing.md
+        return `token.${name.replace(/-/g, '.')}`
+      },
+      transformPx({ value, options }) {
+        // Custom spacing scale
+        const scale = [0, 4, 8, 16, 24, 32, 48, 64]
+        const closest = scale.reduce((prev, curr) => 
+          Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+        )
+        return `spacing-${scale.indexOf(closest)}`
+      }
+    },
+    
+    // Add component output
+    component: {
+      title: 'React',
+      lang: 'tsx',
+      transformComponent({ component }) {
+        const label = findChild<TextNode>(component, { type: 'TEXT' })
+        
+        return h('Button',
+          {
+            variant: component.properties.variant || 'default',
+            size: component.properties.size || 'md'
+          },
+          [label?.characters || 'Button']
+        )
+      }
+    },
+    
+    // Hide JavaScript output
+    js: false
+  }
+})
+```
+
+## Type definitions reference
+
+For complete type definitions, see the [source code](https://github.com/ecomfe/tempad-dev/blob/main/packages/plugins/src/index.ts).
+
+Key types:
+- `Plugin` - Main plugin configuration
+- `CodeBlockOptions` - Configuration for code blocks
+- `TransformParams` - Parameters for transform hook
+- `TransformVariableParams` - Parameters for transformVariable hook
+- `TransformPxParams` - Parameters for transformPx hook
+- `TransformComponentParams` - Parameters for transformComponent hook
+- `DesignNode` - Union of all design node types
+- `DevComponent` - Component tree structure
+
+## Next steps
+
+<Card title="Deploy Your Plugin" icon="rocket" href="/plugins/deploying-plugins">
+  Learn how to host and share your plugin
+</Card>

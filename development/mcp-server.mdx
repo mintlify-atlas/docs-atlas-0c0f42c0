@@ -1,0 +1,444 @@
+---
+title: MCP Server Package
+description: MCP server runtime that exposes tools and proxies calls to the extension
+---
+
+## Overview
+
+The MCP server package (`@tempad-dev/mcp`) is a Hub/CLI that exposes MCP tools and proxies calls to the browser extension via WebSocket.
+
+**Location:** `packages/mcp-server/`
+
+**NPM Package:** `@tempad-dev/mcp`
+
+**Repository:** https://github.com/ecomfe/tempad-dev
+
+## Responsibilities
+
+- Tool registration and routing in the Hub
+- Asset storage and HTTP/MCP resource serving
+- CLI/Hub lifecycle stability
+- WebSocket server for extension communication
+- MCP stdio transport for AI clients
+
+## Tech Stack
+
+- **Language:** TypeScript
+- **Runtime:** Node.js 18+
+- **MCP SDK:** `@modelcontextprotocol/sdk`
+- **Transport:** WebSocket + stdio
+- **Logging:** Pino
+
+## Directory Structure
+
+```
+packages/mcp-server/
+├── src/
+│   ├── cli.ts                # MCP stdio entrypoint and Hub startup
+│   ├── hub.ts                # Tool routing, WebSocket server, MCP resources
+│   ├── tools.ts              # Tool definitions and formatters
+│   ├── request.ts            # Pending tool call tracking and timeouts
+│   ├── asset-store.ts        # Asset index and cleanup
+│   ├── asset-http-server.ts  # HTTP upload/download
+│   ├── asset-utils.ts        # Asset utility functions
+│   ├── config.ts             # Configuration
+│   └── shared.ts             # Shared utilities
+├── tests/                    # Test files
+│   ├── tools.test.ts
+│   ├── asset-store.test.ts
+│   └── ...
+├── tsdown.config.ts          # Build configuration
+└── package.json
+```
+
+## Key Commands
+
+### Building
+
+```bash
+# From root
+pnpm build:mcp
+
+# From package directory
+pnpm -C packages/mcp-server build
+
+# Or with filter
+pnpm --filter @tempad-dev/mcp build
+```
+
+**Output:** `dist/cli.mjs` (binary entrypoint)
+
+### Testing
+
+```bash
+# Run tests
+pnpm -C packages/mcp-server test:run
+
+# With coverage
+pnpm -C packages/mcp-server test:coverage
+
+# Watch mode
+pnpm -C packages/mcp-server test
+```
+
+### Quality Checks
+
+```bash
+# Typecheck
+pnpm -C packages/mcp-server typecheck
+
+# Lint
+pnpm -C packages/mcp-server lint
+pnpm -C packages/mcp-server lint:fix
+
+# Format
+pnpm -C packages/mcp-server format
+pnpm -C packages/mcp-server format:check
+```
+
+### Publishing
+
+```bash
+# From root
+pnpm npm:mcp
+
+# Manually
+pnpm -C packages/mcp-server publish --access public
+```
+
+**Pre-publish:** `build` runs automatically via `prepublishOnly`
+
+## Architecture
+
+### CLI Entrypoint
+
+**File:** `src/cli.ts`
+
+Starts the MCP server with stdio transport:
+
+```typescript
+// MCP stdio entrypoint
+import { startHub } from './hub'
+
+startHub()
+```
+
+### Hub
+
+**File:** `src/hub.ts`
+
+**Responsibilities:**
+- MCP server lifecycle
+- Tool routing
+- WebSocket server for extension communication
+- Resource serving (assets via HTTP)
+
+**Architecture:**
+
+```
+┌─────────────┐
+│  AI Client  │
+└──────┬──────┘
+       │ stdio
+       ▼
+┌─────────────┐
+│  MCP Server │ (hub.ts)
+└──────┬──────┘
+       │ WebSocket
+       ▼
+┌─────────────┐
+│  Extension  │
+└─────────────┘
+```
+
+### Tool Definitions
+
+**File:** `src/tools.ts`
+
+Tools are registered via `TOOL_DEFS`:
+
+```typescript
+export const TOOL_DEFS = {
+  get_code: defineTool({
+    target: 'extension',
+    inputSchema: GetCodeParametersSchema,
+    formatter: formatGetCode
+  }),
+  get_structure: defineTool({
+    target: 'extension',
+    inputSchema: GetStructureParametersSchema,
+    formatter: formatGetStructure
+  }),
+  // ...
+}
+```
+
+**Target types:**
+- `extension` - Proxied to browser extension
+- `hub` - Handled locally by MCP server
+
+### Request Tracking
+
+**File:** `src/request.ts`
+
+Manages pending tool calls:
+- Request ID generation
+- Timeout tracking
+- Promise resolution/rejection
+
+### Asset Storage
+
+**File:** `src/asset-store.ts`
+
+In-memory asset store:
+- Asset index by ID
+- Automatic cleanup
+- MIME type tracking
+
+**File:** `src/asset-http-server.ts`
+
+HTTP server for asset upload/download:
+- `POST /assets` - Upload asset
+- `GET /assets/:id` - Download asset
+- MCP resource serving
+
+**Asset URIs:** `asset://<id>`
+
+## Tool Registration
+
+### Define a Tool
+
+```typescript
+import { defineTool } from './tools'
+import { z } from 'zod'
+
+const MyToolSchema = z.object({
+  param: z.string()
+})
+
+export const TOOL_DEFS = {
+  my_tool: defineTool({
+    target: 'extension',
+    inputSchema: MyToolSchema,
+    formatter: (result) => ({
+      content: [
+        {
+          type: 'text',
+          text: JSON.stringify(result, null, 2)
+        }
+      ]
+    })
+  })
+}
+```
+
+### Formatter Function
+
+Formatters convert tool results to MCP response format:
+
+```typescript
+function formatGetCode(result: GetCodeResult): CallToolResult {
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `\`\`\`${result.lang}\n${result.code}\n\`\`\``
+      },
+      ...(result.assets || []).map(asset => ({
+        type: 'text',
+        text: `Asset: ${asset.uri}`
+      }))
+    ]
+  }
+}
+```
+
+## Asset Pipeline
+
+### Upload Asset (from Extension)
+
+Extension uploads assets via HTTP:
+
+```typescript
+const response = await fetch('http://localhost:3000/assets', {
+  method: 'POST',
+  headers: { 'Content-Type': mimeType },
+  body: assetData
+})
+
+const { id } = await response.json()
+const assetUri = `asset://${id}`
+```
+
+### Serve Asset (to AI Client)
+
+MCP server serves assets as resources:
+
+```typescript
+// AI client requests resource
+const resource = await client.readResource({
+  uri: 'asset://abc123'
+})
+
+// MCP server returns asset data
+```
+
+### Asset Cleanup
+
+Assets are automatically cleaned up after a TTL.
+
+## Code Style Guidelines
+
+### Tool Registration
+
+**Good:**
+
+```typescript
+export const TOOL_DEFS = {
+  get_code: defineTool({
+    target: 'extension',
+    inputSchema: GetCodeParametersSchema,
+    formatter: formatGetCode
+  })
+}
+```
+
+### Avoid Embedding Binary Data
+
+**Bad:**
+
+```typescript
+// Embedding base64 in result
+return { image: largeBase64Data }
+```
+
+**Good:**
+
+```typescript
+// Use asset pipeline
+const assetId = await assetStore.add(imageData, 'image/png')
+return { image: `asset://${assetId}` }
+```
+
+## Testing Strategy
+
+### Strict Pure Coverage
+
+These files have enforced coverage:
+
+- `src/asset-utils.ts`
+- `src/tools.ts`
+- `src/config.ts`
+- `src/request.ts`
+- `src/asset-store.ts`
+- `src/asset-http-server.ts`
+- `src/shared.ts`
+
+### Test Files
+
+**Location:** `tests/`
+
+**Pattern:** `*.test.ts` (Node runtime only)
+
+### Deterministic Tests
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { formatGetCode } from '../src/tools'
+
+describe('formatGetCode', () => {
+  it('formats result correctly', () => {
+    const result = formatGetCode({
+      lang: 'tsx',
+      code: 'export default function App() {}'
+    })
+
+    expect(result.content[0].text).toContain('```tsx')
+  })
+})
+```
+
+## Boundaries and Constraints
+
+### Schema Changes
+
+Update `packages/shared` before changing tool schemas:
+
+```bash
+# 1. Update shared schemas
+pnpm --filter @tempad-dev/shared build
+
+# 2. Update MCP server
+pnpm --filter @tempad-dev/mcp build
+
+# 3. Update extension
+pnpm --filter @tempad-dev/extension build
+```
+
+### Asset URIs
+
+Do not change `asset://` URI format without cross-package review.
+
+### Payload Caps
+
+Do not change payload caps without assessing impact on extension and hub.
+
+### Dependencies
+
+Do not add new dependencies without approval.
+
+## Verification Checklist
+
+### Always Run
+
+```bash
+pnpm -C packages/mcp-server typecheck
+pnpm -C packages/mcp-server lint
+pnpm -C packages/mcp-server test:run
+```
+
+### Coverage Check
+
+```bash
+pnpm -C packages/mcp-server test:coverage
+```
+
+### Cross-Package Validation
+
+After schema changes:
+
+```bash
+pnpm --filter @tempad-dev/shared test:run
+pnpm --filter @tempad-dev/mcp test:run
+pnpm --filter @tempad-dev/extension test:run
+```
+
+## Publishing Workflow
+
+1. **Update version** in `package.json`
+2. **Build:**
+   ```bash
+   pnpm -C packages/mcp-server build
+   ```
+3. **Verify:**
+   ```bash
+   pnpm -C packages/mcp-server typecheck
+   pnpm -C packages/mcp-server test:run
+   ```
+4. **Publish:**
+   ```bash
+   pnpm npm:mcp
+   ```
+
+**Pre-publish hook** runs `build` automatically.
+
+## Related Documentation
+
+**In source repo:**
+- Testing architecture: `docs/testing/architecture.md`
+
+**In this site:**
+- [Architecture](/development/architecture)
+- [Testing](/development/testing)
+- [Building](/development/building)
+- [Shared Package](/development/shared)

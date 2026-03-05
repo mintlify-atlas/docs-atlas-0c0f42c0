@@ -1,0 +1,323 @@
+---
+title: "Scroll Selection Into View"
+description: "Center selected elements in the viewport at 100% zoom for better inspection"
+icon: "expand"
+---
+
+## What It Does
+
+Scroll Selection Into View centers the currently selected element in the Figma viewport at 100% zoom. This provides a better inspection experience than Figma's native <kbd>⇧2</kbd> shortcut, which zooms to fill the viewport.
+
+<Frame>
+  <img src="/images/scroll-light.png" alt="Scroll selection into view button in the Meta section" />
+</Frame>
+
+## The Problem It Solves
+
+When inspecting elements in Figma:
+
+- Selected elements may be **off-screen** or at the edge of the viewport
+- Figma's native **<kbd>⇧2</kbd> shortcut zooms to fill**, which often over-zooms
+- You need to **manually pan and zoom** to get the right view
+- Switching between elements requires **repeated repositioning**
+
+TemPad Dev's Scroll Into View feature solves this by:
+- **Centering** the selection in the viewport
+- **Maintaining 100% zoom** for pixel-perfect inspection
+- **One-click access** from the panel header
+
+## How to Use
+
+1. **Select an element** in your Figma file (or use [Deep Select](/features/deep-select))
+2. The element name appears in the **Meta section** at the top of TemPad Dev
+3. **Hover** over the element name area
+4. Click the **Scroll into view** button (appears on hover)
+
+<Steps>
+  <Step title="Select an element">
+    Click on any layer in your Figma file
+  </Step>
+  <Step title="Locate the scroll button">
+    Look for the icon that appears when hovering over the Meta section header
+  </Step>
+  <Step title="Click to center">
+    The viewport smoothly scrolls and zooms to center your selection at 100%
+  </Step>
+</Steps>
+
+## Button Location
+
+The Scroll into view button appears in the **Meta section header**:
+
+```
+┌─────────────────────────────────────┐
+│ Layer Name                      [⌖] │ ← Scroll button appears here
+└─────────────────────────────────────┘
+```
+
+The button is only visible when:
+- An element is selected
+- You hover over the Meta section
+- You're using TemPad Dev in a Figma file (not view-only without API)
+
+## How It Works
+
+The feature uses Figma's Plugin API to provide better viewport control:
+
+```typescript
+function scrollIntoView() {
+  if (!window?.figma || selection.value.length === 0) {
+    return
+  }
+  window.figma.viewport.scrollAndZoomIntoView(selection.value)
+}
+```
+
+This API call:
+1. **Centers** the selected nodes in the viewport
+2. **Zooms to 100%** (1:1 pixel ratio)
+3. **Animates smoothly** to the new position
+
+### Comparison with Figma's Native Shortcut
+
+| Feature | <kbd>⇧2</kbd> (Figma) | Scroll Into View (TemPad Dev) |
+|---------|----------------------|-------------------------------|
+| **Centers selection** | ✓ | ✓ |
+| **Zoom behavior** | Fills viewport | 100% zoom |
+| **Best for** | Overview of large elements | Pixel-perfect inspection |
+| **Access** | Keyboard only | One-click button |
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Multi-Element Inspection">
+    When inspecting multiple elements across a large canvas:
+    
+    **Workflow:**
+    1. Select first element (e.g., button in header)
+    2. Click Scroll into view → Element centered
+    3. Copy CSS from Code panel
+    4. Select next element (e.g., button in footer)
+    5. Click Scroll into view → New element centered
+    6. Repeat for efficient inspection
+  </Accordion>
+  
+  <Accordion title="Nested Component Inspection">
+    After using Deep Select to access nested elements:
+    
+    **Example:**
+    1. Enable [Deep Select mode](/features/deep-select)
+    2. Click on icon deep inside a card component
+    3. Icon is selected but may be in a zoomed-out view
+    4. Click Scroll into view
+    5. Icon is now centered at 100% for detailed inspection
+  </Accordion>
+  
+  <Accordion title="Design Review Sessions">
+    During developer handoff or design QA:
+    
+    **Scenario:**
+    - Designer shares file link
+    - Developer opens in TemPad Dev
+    - Clicks through elements in layer list
+    - Uses Scroll into view for each to center and inspect
+    - Maintains consistent 100% zoom throughout
+  </Accordion>
+</AccordionGroup>
+
+## Integration with Other Features
+
+### Deep Select + Scroll Into View
+
+Perfect workflow for inspecting nested elements:
+
+1. **Enable Deep Select** in preferences
+2. **Click** on a complex component → Deepest element selected
+3. **Click Scroll into view** → Element centered and zoomed to 100%
+4. **Inspect** code, spacing, and styles in the panel
+
+### Measure Mode + Scroll Into View
+
+Efficient spacing verification:
+
+1. **Select element** (manually or with Deep Select)
+2. **Click Scroll into view** → Element centered
+3. **Enable Measure mode** → Spacing shown as you hover
+4. **Verify** measurements at 100% zoom for accuracy
+
+### Code Inspection + Scroll Into View
+
+Precise style extraction:
+
+1. **Select element** from layer panel or canvas
+2. **Scroll into view** → Element centered
+3. **Zoom in** if needed for fine details
+4. **Extract** CSS with accurate visual reference
+
+## Visual Feedback
+
+### Before Scroll Into View
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│     [Small Element]                     │ ← Element is small/off-center
+│                                         │
+│                                         │
+└─────────────────────────────────────────┘
+       Viewport at 25% zoom
+```
+
+### After Scroll Into View
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│          ┌──────────────┐              │
+│          │   Element    │              │ ← Element centered at 100%
+│          │   (actual    │              │
+│          │    size)     │              │
+│          └──────────────┘              │
+│                                         │
+└─────────────────────────────────────────┘
+       Viewport at 100% zoom
+```
+
+## Behavior with Multiple Selections
+
+When multiple elements are selected:
+
+- The Scroll into view button **still appears**
+- Clicking it **centers all selected elements** as a group
+- Zoom level is set to show all elements while maintaining visibility
+
+**Example:**
+```
+Selected: Button, Icon, Text (3 elements)
+Result: All three elements centered in viewport
+Zoom: 100% or adjusted to fit all comfortably
+```
+
+## Availability
+
+<Warning>
+  This feature requires access to the Figma Plugin API (`window.figma`). It may not work in certain viewing modes.
+</Warning>
+
+### When Available
+
+<Check>Works in these scenarios:</Check>
+
+- Figma files where you have edit access
+- Browser extension with plugin API available
+- Figma web app (non-view-only mode)
+
+### When Unavailable
+
+<Warning>Limited or unavailable in these scenarios:</Warning>
+
+- Figma view-only mode (without `window.figma` API)
+- Certain browser configurations that block the plugin API
+- Quirks mode (when `window.figma` is unavailable)
+
+The button will not appear if `window.figma` is unavailable:
+
+```vue
+const showFocusButton = computed(
+  () => window.figma && selection.value && selection.value.length > 0
+)
+```
+
+## Tips and Best Practices
+
+<Tip>
+  **Use as a "reset" button** - When you've zoomed and panned around, click Scroll into view to quickly return to a standard inspection view.
+</Tip>
+
+<Tip>
+  **Combine with layer panel** - Select elements from the layer panel, then use Scroll into view to find them on the canvas.
+</Tip>
+
+<Tip>
+  **Keyboard + click workflow** - Use arrow keys to navigate between elements, click Scroll into view each time for consistent inspection.
+</Tip>
+
+<Note>
+  The feature always zooms to 100%, which is ideal for inspecting pixels, fonts, and spacing. If you need an overview of a large component, use Figma's native <kbd>⇧2</kbd> instead.
+</Note>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Button doesn't appear">
+    **Possible causes:**
+    - No element is selected
+    - You're in view-only mode without plugin API
+    - `window.figma` is not available in your environment
+    
+    **Try:**
+    - Select an element first
+    - Check if you have edit access to the file
+    - Refresh the page
+  </Accordion>
+  
+  <Accordion title="Nothing happens when clicking">
+    **Check:**
+    - Is there a valid selection?
+    - Does the console show any errors? (Open browser DevTools)
+    - Try selecting a different element
+  </Accordion>
+  
+  <Accordion title="Zoom level seems wrong">
+    **Expected behavior:**
+    - Single element: Zooms to 100%
+    - Multiple elements: Zooms to fit all elements while maintaining visibility
+    - Very large elements: May zoom out slightly to fit
+    
+    **If unexpected:**
+    - Try selecting just one element
+    - Report the issue if zoom behavior is consistently wrong
+  </Accordion>
+</AccordionGroup>
+
+## Keyboard Alternative
+
+While TemPad Dev provides a button, you can also use Figma's native shortcuts:
+
+| Shortcut | Behavior |
+|----------|----------|
+| <kbd>⇧2</kbd> | Zoom to fit selection (fills viewport) |
+| <kbd>⇧1</kbd> | Zoom to fit all (shows entire canvas) |
+| <kbd>⌘ + 0</kbd> | Reset zoom to 100% (doesn't center) |
+
+<Note>
+  TemPad Dev's Scroll into view combines the best aspects: centers selection AND maintains 100% zoom.
+</Note>
+
+## API Reference
+
+For plugin developers or those interested in the implementation:
+
+```typescript
+// Figma Plugin API method used
+window.figma.viewport.scrollAndZoomIntoView(nodes: SceneNode[])
+```
+
+**Parameters:**
+- `nodes`: Array of SceneNode objects to center in viewport
+
+**Behavior:**
+- Centers the bounding box of all provided nodes
+- Sets zoom to 100% for single nodes
+- Adjusts zoom to fit multiple nodes comfortably
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deep Select" icon="hand-pointer" href="/features/deep-select">
+    Select nested elements quickly before scrolling into view
+  </Card>
+  <Card title="Inspect Code" icon="code" href="/features/inspect-code">
+    Extract styles after centering elements for inspection
+  </Card>
+</CardGroup>

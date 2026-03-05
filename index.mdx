@@ -1,97 +1,271 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: TemPad Dev Documentation
+description: Inspect panel on Figma that provides CSS/JavaScript code generation, plugins, and MCP server integration for everyone
+mode: custom
 ---
 
-## Setting up
+<div className="relative bg-gradient-to-br from-[#e47443] via-[#da4d41] to-[#c94339] dark:from-[#1a1d27] dark:via-[#0f1117] dark:to-[#0a0b0f] py-20 overflow-hidden">
+  {/* Background pattern */}
+  <div className="absolute inset-0 opacity-10">
+    <div className="absolute inset-0" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '40px 40px'}}></div>
+  </div>
+  
+  <div className="relative max-w-7xl mx-auto px-6 sm:px-8">
+    <div className="flex flex-col lg:flex-row items-center gap-12">
+      {/* Hero content */}
+      <div className="flex-1 text-center lg:text-left">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          Inspect Panel on Figma, for <span className="text-[#e4e4e4]">Everyone</span>
+        </h1>
+        <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8">
+          Extract CSS and JavaScript code from Figma selections, customize output with plugins, and integrate with AI agents through MCP server.
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+          <a
+            href="/quickstart"
+            className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-[#e47443] font-semibold hover:bg-[#e4e4e4] transition-colors"
+          >
+            Get Started
+          </a>
+          <a
+            href="/mcp/overview"
+            className="inline-flex items-center px-6 py-3 rounded-lg border-2 border-white/30 bg-white/10 text-white font-semibold hover:bg-white/20 hover:border-white/50 transition-colors backdrop-blur-sm"
+          >
+            Explore MCP Server
+          </a>
+        </div>
+      </div>
+      
+      {/* Hero image placeholder */}
+      <div className="flex-1 max-w-lg hidden lg:block">
+        <div className="aspect-video rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-2xl"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+{/* Quick Start Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="mb-12 text-center">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Quick Start
+    </h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">
+      Get up and running with TemPad Dev in minutes
+    </p>
+  </div>
+  
+  <Steps>
+    <Step title="Install the Extension">
+      Install TemPad Dev from the Chrome Web Store:
+      
+      <a 
+        href="https://chrome.google.com/webstore/detail/tempad-dev/lgoeakbaikpkihoiphamaeopmliaimpc"
+        className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-[#e47443] text-white font-medium hover:bg-[#da4d41] transition-colors"
+      >
+        Install on Chrome Web Store
+      </a>
+    </Step>
+    
+    <Step title="Open Figma">
+      Navigate to any Figma file (design or view-only mode). The TemPad Dev panel will appear automatically.
+      
+      <Note>
+        TemPad Dev works in both edit mode and read-only view mode. Some features like "Scroll Selection into View" require edit access.
+      </Note>
+    </Step>
+    
+    <Step title="Select and Inspect">
+      Click on any element in Figma, and TemPad Dev will generate the corresponding CSS and JavaScript code:
+      
+      ```css
+      .element {
+        display: flex;
+        width: 200px;
+        height: 100px;
+        padding: 16px;
+        background: #e47443;
+        border-radius: 8px;
+      }
+      ```
+      
+      The code panel shows both CSS and JavaScript object syntax, making it easy to copy into your project.
+    </Step>
+    
+    <Step title="Customize Output">
+      Configure units, variables, and install plugins from **Preferences** to customize code generation:
+      
+      - Switch between `px`, `rem`, or other units
+      - Choose variable display mode (Reference/Resolved/Both)
+      - Install plugins for framework-specific output (Tailwind, UnoCSS, etc.)
+    </Step>
+  </Steps>
+</div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+{/* Key Features Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="mb-12 text-center">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Key Features
+    </h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">
+      Everything you need to extract design code from Figma
+    </p>
+  </div>
+  
+  <CardGroup cols={2}>
+    <Card title="CSS & JavaScript Code" icon="code" href="/features/inspect-code">
+      Generate CSS and JavaScript object syntax from any Figma selection. Customize units, variables, and output format.
+    </Card>
+    <Card title="Plugin System" icon="puzzle-piece" href="/plugins/overview">
+      Extend code generation with custom plugins. Transform output to Tailwind, UnoCSS, or your design system.
+    </Card>
+    <Card title="MCP Server Integration" icon="server" href="/mcp/overview">
+      Connect AI agents and IDEs to Figma through Model Context Protocol. Extract code and structure programmatically.
+    </Card>
+    <Card title="Deep Select Mode" icon="hand-pointer" href="/features/deep-select">
+      Select nested elements in read-only mode with a single click, no more double-clicking required.
+    </Card>
+    <Card title="Measure Mode" icon="ruler" href="/features/measure-mode">
+      Display spacing between elements automatically without holding modifier keys.
+    </Card>
+    <Card title="Variable Support" icon="brackets-curly" href="/configuration/variables">
+      Display Figma variables as CSS variables, resolved values, or both in your generated code.
+    </Card>
+  </CardGroup>
+</div>
 
-## Make it yours
+{/* Explore by Topic Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="mb-12 text-center">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Explore by Topic
+    </h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">
+      Dive deeper into specific features and integrations
+    </p>
+  </div>
+  
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {/* Core Features Card */}
+    <a 
+      href="/features/inspect-code"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#e47443] dark:hover:border-[#e47443] transition-colors no-underline"
+    >
+      <div className="mb-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-[#e47443]/10 text-[#e47443]">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        Core Features
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Learn about code inspection, deep select, measure mode, and scroll features.
+      </p>
+      <div className="flex items-center text-sm font-medium text-[#e47443] group-hover:text-[#da4d41]">
+        Explore features
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    {/* Plugins Card */}
+    <a 
+      href="/plugins/overview"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#e47443] dark:hover:border-[#e47443] transition-colors no-underline"
+    >
+      <div className="mb-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-[#e47443]/10 text-[#e47443]">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd"/>
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        Plugins
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Create custom plugins to transform code output for Tailwind, UnoCSS, and design systems.
+      </p>
+      <div className="flex items-center text-sm font-medium text-[#e47443] group-hover:text-[#da4d41]">
+        Build plugins
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+    
+    {/* MCP Server Card */}
+    <a 
+      href="/mcp/overview"
+      className="group block rounded-2xl border border-gray-200 dark:border-[#27272a] bg-white dark:bg-[#1a1d27] p-6 hover:border-[#e47443] dark:hover:border-[#e47443] transition-colors no-underline"
+    >
+      <div className="mb-4">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-[#e47443]/10 text-[#e47443]">
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+          </svg>
+        </div>
+      </div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+        MCP Server
+      </h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        Connect AI agents and IDEs to Figma through Model Context Protocol integration.
+      </p>
+      <div className="flex items-center text-sm font-medium text-[#e47443] group-hover:text-[#da4d41]">
+        Setup MCP
+        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </a>
+  </div>
+</div>
 
-Design a docs site that looks great and empowers your users.
+{/* Resources Section */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="mb-12 text-center">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+      Resources & Community
+    </h2>
+    <p className="text-lg text-gray-600 dark:text-gray-400">
+      Get help and connect with the community
+    </p>
+  </div>
+  
+  <CardGroup cols={3}>
+    <Card title="GitHub" icon="github" href="https://github.com/ecomfe/tempad-dev">
+      View source code, report issues, and contribute to the project.
+    </Card>
+    <Card title="Discord" icon="discord" href="https://discord.gg/MXGXwtkEck">
+      Join our Discord community for support and discussions.
+    </Card>
+    <Card title="API Reference" icon="book-open" href="/api/define-plugin">
+      Explore the complete Plugin API and MCP Tools reference.
+    </Card>
+  </CardGroup>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+{/* Closing CTA */}
+<div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+  <div className="rounded-2xl bg-gradient-to-r from-[#e47443] to-[#da4d41] dark:from-[#e47443]/90 dark:to-[#da4d41]/90 p-12 text-center">
+    <h2 className="text-3xl font-bold text-white mb-4">
+      Ready to Get Started?
+    </h2>
+    <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+      Install TemPad Dev and start extracting design code from Figma in minutes.
+    </p>
+    <a
+      href="/quickstart"
+      className="inline-flex items-center px-8 py-4 rounded-lg bg-white text-[#e47443] font-semibold hover:bg-[#e4e4e4] transition-colors text-lg"
+    >
+      Get Started Now
+    </a>
+  </div>
+</div>

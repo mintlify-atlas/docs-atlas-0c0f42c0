@@ -1,0 +1,305 @@
+---
+title: MCP Tools Reference
+description: Detailed documentation for TemPad Dev MCP tools and their schemas
+---
+
+TemPad Dev MCP exposes tools that allow agents to pull code, structure, and assets from Figma designs. All tools operate on the currently selected node or an explicitly provided `nodeId`.
+
+## get_code
+
+Generate high-fidelity code output for a Figma selection, including markup, styles, assets, and design tokens.
+
+<ParamField path="nodeId" type="string" optional>
+  Target node ID to generate code for. If omitted, uses the current single selection in Figma.
+</ParamField>
+
+<ParamField path="preferredLang" type="'jsx' | 'vue'" optional>
+  Preferred output language. If omitted, TemPad Dev uses the design's hint or detected language, falling back to JSX. Note that plugins may override this preference.
+</ParamField>
+
+<ParamField path="resolveTokens" type="boolean" default="false" optional>
+  When `true`, inlines token values for quick renders. When `false` (default), returns token metadata so you can map into your project's theming system. Token resolution is mode-aware per node.
+</ParamField>
+
+### Response Schema
+
+```typescript
+{
+  code: string              // Generated markup
+  lang: 'jsx' | 'vue'      // Actual language used (may differ from preferredLang)
+  assets?: AssetDescriptor[] // Attached binary assets
+  tokens?: {                // Design tokens (if resolveTokens is false)
+    [name: string]: {
+      kind: 'color' | 'number' | 'string' | 'boolean'
+      value: string | Record<string, string> // Single mode or multi-mode values
+    }
+  }
+  codegen: {               // Codegen configuration used
+    plugin: string
+    config: {
+      cssUnit: 'px' | 'rem'
+      rootFontSize: number
+      scale: number
+    }
+  }
+  warnings?: Array<{       // Warnings about truncation, inference, etc.
+    type: string
+    message: string
+    data?: Record<string, unknown>
+  }>
+}
+```
+
+### Asset Descriptor Schema
+
+```typescript
+{
+  hash: string        // Unique content hash (8 hex chars)
+  url: string         // HTTP download URL
+  mimeType: string    // e.g., 'image/png', 'image/svg+xml'
+  size: number        // File size in bytes
+  width?: number      // Image width in pixels (if applicable)
+  height?: number     // Image height in pixels (if applicable)
+}
+```
+
+### Usage Example
+
+```typescript
+// Fetch code for current selection
+const result = await tools.get_code({
+  preferredLang: 'jsx',
+  resolveTokens: false
+})
+
+console.log(result.code)        // JSX/Vue markup
+console.log(result.lang)        // Actual language used
+console.log(result.assets)      // Array of asset descriptors
+console.log(result.tokens)      // Token metadata
+```
+
+### Warnings
+
+The `warnings` array may include:
+
+<ResponseField name="truncated" type="warning">
+  **Type**: `depth-cap`
+  
+  The response was truncated due to depth limits. The `data` field includes a `cappedNodes` array with node IDs that were not fully expanded.
+  
+  **Action**: Call `get_code` again for each listed `nodeId` to retrieve the full subtree.
+</ResponseField>
+
+<ResponseField name="auto-layout" type="warning">
+  **Type**: `auto-layout`
+  
+  Auto-layout was inferred or uncertain. Layout may not be precise.
+  
+  **Action**: Use `get_structure` to confirm hierarchy and overlap with explicit geometry.
+</ResponseField>
+
+<ResponseField name="budget-exceeded" type="error">
+  **Type**: Error (not a warning)
+  
+  The output exceeded the payload size limit (~4MB). The error message includes current consumption, limit, and overage.
+  
+  **Action**: Pass a smaller subtree `nodeId` to narrow scope, then retry.
+</ResponseField>
+
+<Tip>
+Strip `data-hint-*` attributes from the generated code. These attributes are for agent reasoning only and should not appear in production code.
+</Tip>
+
+---
+
+## get_structure
+
+Retrieve a compact structural and geometry outline for understanding node hierarchy, layout intent, and overlap.
+
+<ParamField path="nodeId" type="string" optional>
+  Target node ID to outline. If omitted, uses the current single selection.
+</ParamField>
+
+<ParamField path="options.depth" type="number" optional>
+  Limit traversal depth. If omitted, traverses the full tree (subject to safety caps).
+</ParamField>
+
+### Response Schema
+
+```typescript
+{
+  roots: OutlineNode[]  // Array of root nodes in the outline
+}
+
+type OutlineNode = {
+  id: string           // Figma node ID
+  name: string         // Node name
+  type: string         // Node type (e.g., 'FRAME', 'TEXT', 'RECTANGLE')
+  x: number            // X coordinate relative to parent
+  y: number            // Y coordinate relative to parent
+  width: number        // Width in pixels
+  height: number       // Height in pixels
+  children?: OutlineNode[]  // Child nodes (if any)
+}
+```
+
+### Usage Example
+
+```typescript
+// Get structure for current selection
+const structure = await tools.get_structure({})
+
+// Get structure with depth limit
+const limited = await tools.get_structure({
+  options: { depth: 3 }
+})
+
+console.log(structure.roots[0].id)       // Root node ID
+console.log(structure.roots[0].children) // Child nodes
+```
+
+<Note>
+Use `get_structure` when `get_code` warnings indicate auto-layout uncertainty or when you need explicit geometry for layout refactoring.
+</Note>
+
+---
+
+## get_screenshot
+
+<Warning>
+This tool is not exposed by default. It may be enabled in future versions for visual verification of layering, overlap, masks, and effects.
+</Warning>
+
+Capture a rendered PNG screenshot of a node for visual verification.
+
+<ParamField path="nodeId" type="string" optional>
+  Target node ID to screenshot. If omitted, uses the current single selection.
+</ParamField>
+
+### Response Schema
+
+```typescript
+{
+  format: 'png'
+  width: number         // Screenshot width in pixels
+  height: number        // Screenshot height in pixels
+  scale: number         // Render scale (e.g., 2 for @2x)
+  bytes: number         // File size in bytes
+  asset: AssetDescriptor // Asset with download URL
+}
+```
+
+---
+
+## get_token_defs
+
+<Warning>
+This tool is not exposed by default. Use the `tokens` field from `get_code` responses instead.
+</Warning>
+
+Resolve canonical token names to literal values, optionally including all modes.
+
+<ParamField path="names" type="string[]" required>
+  Array of canonical token names in CSS variable form (e.g., `--color-primary`). Must start with `--`.
+</ParamField>
+
+<ParamField path="includeAllModes" type="boolean" default="false" optional>
+  When `true`, includes all token modes (light, dark, etc.) instead of just the active mode.
+</ParamField>
+
+### Response Schema
+
+```typescript
+{
+  [canonicalName: string]: {
+    kind: 'color' | 'number' | 'string' | 'boolean'
+    value: string | Record<string, string> // Single mode or multi-mode map
+  }
+}
+```
+
+---
+
+## get_assets
+
+<Warning>
+This is a hub-only tool not exposed to agents. Asset URLs are included directly in `get_code` and `get_screenshot` responses.
+</Warning>
+
+Resolve asset hashes to downloadable URLs and metadata.
+
+<ParamField path="hashes" type="string[]" required>
+  Array of asset hashes (8 hex characters) from tool responses.
+</ParamField>
+
+### Response Schema
+
+```typescript
+{
+  assets: AssetDescriptor[]  // Resolved assets
+  missing: string[]          // Hashes that were not found
+}
+```
+
+---
+
+## Error Handling
+
+All tools may return these error codes:
+
+<ResponseField name="NO_ACTIVE_EXTENSION" type="error">
+  No TemPad Dev extension is connected or active.
+  
+  **Troubleshooting**:
+  - Open TemPad Dev panel in Figma and enable MCP
+  - Click the MCP badge to activate the tab if multiple tabs are open
+  - Keep the Figma tab active while running MCP tools
+</ResponseField>
+
+<ResponseField name="INVALID_SELECTION" type="error">
+  The selection is invalid or empty.
+  
+  **Action**: Select exactly one visible node, or pass a valid `nodeId`.
+</ResponseField>
+
+<ResponseField name="NODE_NOT_VISIBLE" type="error">
+  The target node is not visible (hidden layer or outside viewport).
+  
+  **Action**: Ensure the node is visible and not in a collapsed group.
+</ResponseField>
+
+<ResponseField name="EXTENSION_TIMEOUT" type="error">
+  The extension did not respond within the timeout period (default 15 seconds).
+  
+  **Action**: Try a smaller selection or increase `TEMPAD_MCP_TOOL_TIMEOUT`.
+</ResponseField>
+
+<ResponseField name="EXTENSION_DISCONNECTED" type="error">
+  The extension disconnected during the operation.
+  
+  **Action**: Refresh the Figma tab and ensure MCP is enabled.
+</ResponseField>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Start with get_code" icon="code">
+    Use `get_code` as your primary source of truth for design implementation. It provides complete markup, styles, assets, and configuration.
+  </Card>
+  
+  <Card title="Use get_structure for clarity" icon="sitemap">
+    When `get_code` warnings mention auto-layout inference, call `get_structure` to verify hierarchy and positioning.
+  </Card>
+  
+  <Card title="Handle depth-cap warnings" icon="layer-group">
+    If truncation warnings appear, make additional `get_code` calls for each capped node ID to retrieve the full subtree.
+  </Card>
+  
+  <Card title="Download assets immediately" icon="download">
+    Asset URLs are ephemeral. Download bytes from `asset.url` as soon as you receive them and store them in your project's asset pipeline.
+  </Card>
+</CardGroup>
+
+<Tip>
+For best results pairing MCP with coding agents, install the [TemPad Dev agent skill](/mcp/agent-skill) which provides workflows for translating designs into production-ready UI code.
+</Tip>

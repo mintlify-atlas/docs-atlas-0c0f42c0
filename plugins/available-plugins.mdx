@@ -1,0 +1,199 @@
+---
+title: Available Plugins
+description: Official registry of TemPad Dev plugins
+---
+
+## Official plugin registry
+
+These plugins are available in the [official registry](https://github.com/ecomfe/tempad-dev/blob/main/packages/extension/plugins/available-plugins.json) and can be installed by name using the `@{name}` syntax.
+
+## Design systems
+
+### Kong Design System
+
+**Install:** `@kong`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/Justineo">@Justineo</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/Justineo/tempad-dev-plugin-kong">GitHub</a></p>
+    <p>Official Kong Design System plugin for converting Figma designs to Kong components.</p>
+  </div>
+</Card>
+
+### Kong Design System (Advanced)
+
+**Install:** `@kong/advanced`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/Justineo">@Justineo</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/Justineo/tempad-dev-plugin-kong">GitHub</a></p>
+    <p>Advanced variant of the Kong Design System plugin with additional features.</p>
+  </div>
+</Card>
+
+### Nuxt UI
+
+**Install:** `@nuxt`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/Justineo">@Justineo</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/Justineo/tempad-dev-plugin-nuxt-ui">GitHub</a></p>
+    <p>Generate Nuxt UI component code from Figma designs.</p>
+  </div>
+</Card>
+
+### Nuxt UI Pro
+
+**Install:** `@nuxt/pro`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/Justineo">@Justineo</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/Justineo/tempad-dev-plugin-nuxt-ui">GitHub</a></p>
+    <p>Nuxt UI Pro components support for premium Nuxt UI features.</p>
+  </div>
+</Card>
+
+## CSS frameworks
+
+### Tailwind CSS
+
+**Install:** `@tailwind`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/haydenull">@haydenull</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/haydenull/tempad-dev-plugin-tailwind">GitHub</a></p>
+    <p>Convert CSS styles to Tailwind utility classes automatically.</p>
+  </div>
+</Card>
+
+### UnoCSS by FubukiCSS
+
+**Install:** `@fubukicss/unocss`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/zouhangwithsweet">@zouhangwithsweet</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/zouhangwithsweet/fubukicss-tool">GitHub</a></p>
+    <p>Generate UnoCSS utility classes from Figma designs using FubukiCSS.</p>
+  </div>
+</Card>
+
+## Framework adapters
+
+### React Native StyleSheet
+
+**Install:** `@react-native`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/CANntyield">@CANntyield</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/CANntyield/tempad-dev-plugin-react-native">GitHub</a></p>
+    <p>Convert CSS to React Native StyleSheet objects for mobile development.</p>
+  </div>
+</Card>
+
+## Custom design systems
+
+### Baidu Health wz-style
+
+**Install:** `@baidu-health/wz-style`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/KangXinzhi">@KangXinzhi</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/KangXinzhi/tempad-dev-plugin-wz-style">GitHub</a></p>
+    <p>Custom style plugin for Baidu Health wz-style design system.</p>
+  </div>
+</Card>
+
+### Baidu Health med-style
+
+**Install:** `@baidu-health/med-style`
+
+<Card>
+  <div>
+    <p><strong>Author:</strong> <a href="https://github.com/KangXinzhi">@KangXinzhi</a></p>
+    <p><strong>Repository:</strong> <a href="https://github.com/KangXinzhi/tempad-dev-plugin-med-style">GitHub</a></p>
+    <p>Custom style plugin for Baidu Health med-style design system.</p>
+  </div>
+</Card>
+
+## Installation
+
+To install any plugin from the registry:
+
+1. Open TemPad Dev in Figma
+2. Go to **Preferences → Plugins**
+3. Enter the plugin name with `@` prefix (e.g., `@tailwind`)
+4. Click **Save**
+
+```text
+@tailwind
+@kong
+@nuxt/pro
+```
+
+<Note>
+  Plugin code is stored in browser local storage and is **not auto-updated**. Manually update plugins from Preferences when new versions are released.
+</Note>
+
+## Custom plugins
+
+You can also install plugins by URL:
+
+```text
+https://raw.githubusercontent.com/username/repo/refs/heads/main/plugin.js
+```
+
+<Card title="Create Your Own Plugin" icon="code" href="/plugins/creating-plugins">
+  Learn how to build custom plugins for your design system
+</Card>
+
+## Contributing your plugin
+
+Want to add your plugin to the registry?
+
+1. Create your plugin following the [creation guide](/plugins/creating-plugins)
+2. Host it on GitHub or a public URL
+3. Add it to the [registry file](https://github.com/ecomfe/tempad-dev/edit/main/packages/extension/plugins/available-plugins.json)
+4. Submit a pull request
+
+**Registry entry format:**
+
+```json
+{
+  "name": "your-plugin",
+  "author": "@yourusername",
+  "description": "Short description of what your plugin does",
+  "repo": "https://github.com/yourusername/tempad-dev-plugin-name",
+  "url": "https://raw.githubusercontent.com/yourusername/tempad-dev-plugin-name/main/dist/index.js"
+}
+```
+
+<Card title="Deploy Your Plugin" icon="rocket" href="/plugins/deploying-plugins">
+  Learn how to host and share your plugin
+</Card>
+
+## Plugin requirements
+
+To be accepted into the registry, plugins must:
+
+- ✅ Be hosted on a public, stable URL
+- ✅ Support cross-origin requests (CORS)
+- ✅ Be a valid ES module
+- ✅ Export a valid plugin object
+- ✅ Have a public repository with documentation
+- ✅ Follow semantic versioning
+
+## Support and issues
+
+For plugin-specific issues, contact the plugin author directly through their repository.
+
+For TemPad Dev core issues:
+- GitHub: [ecomfe/tempad-dev](https://github.com/ecomfe/tempad-dev)
+- Discord: [Join community](https://discord.gg/MXGXwtkEck)

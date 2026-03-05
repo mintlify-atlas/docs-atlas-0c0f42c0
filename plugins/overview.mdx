@@ -1,0 +1,150 @@
+---
+title: Plugin System Overview
+description: Customize TemPad Dev's code output with powerful, type-safe plugins
+---
+
+## What are plugins?
+
+Plugins allow you to customize the built-in code output or add custom code blocks in TemPad Dev. A plugin is a simple JavaScript file that exports a plugin object, enabling you to:
+
+- Transform CSS output to match your design system (e.g., Tailwind, UnoCSS, Stylus)
+- Convert CSS variables to alternative formats (e.g., Sass variables, design tokens)
+- Generate component code for your specific framework
+- Customize pixel-to-rem conversion logic
+- Hide or rename built-in code blocks
+
+<Frame>
+  <img src="/images/plugins-preferences.png" alt="Plugins section in preferences" />
+</Frame>
+
+## How plugins work
+
+Plugins run in a Web Worker, so they:
+
+- **Do not impact performance** - they run off the main thread
+- **Cannot access the DOM** - safeguarding security
+- **Have limited globals** - only a safe subset of JavaScript is available
+
+When you select an element in Figma, TemPad Dev:
+
+1. Extracts the design properties (styles, layout, variables)
+2. Generates base CSS/JavaScript code
+3. Passes the data through your plugin's transform hooks
+4. Displays the final output in code blocks
+
+## Plugin installation
+
+There are two ways to install plugins:
+
+### By name (built-in plugins)
+
+Use the `@{name}` syntax for plugins in the [official registry](https://github.com/ecomfe/tempad-dev/blob/main/packages/extension/plugins/available-plugins.json):
+
+```text
+@tailwind
+@kong
+@nuxt/pro
+```
+
+### By URL (custom plugins)
+
+Paste a direct URL to your plugin file:
+
+```text
+https://raw.githubusercontent.com/username/repo/refs/heads/main/plugin.js
+```
+
+<Note>
+  Plugin URLs must support cross-origin requests. GitHub raw URLs and Gists are ideal for this.
+</Note>
+
+<Warning>
+  Plugin code is stored in browser local storage. Plugins are **not versioned or auto-updated** - you must manually update them from the Preferences UI.
+</Warning>
+
+## Plugin capabilities
+
+Plugins support four powerful hooks:
+
+### `transform`
+
+Converts the style object or code into a custom string format.
+
+**Use case:** Generate Tailwind classes, UnoCSS utilities, or custom CSS frameworks
+
+### `transformVariable`
+
+Converts CSS variables into alternative formats.
+
+**Use case:** Transform `var(--color-primary)` to `$ui-color-primary` for Sass
+
+### `transformPx`
+
+Converts pixel values to other units or applies scaling.
+
+**Use case:** Custom rem conversion logic or design system-specific scaling
+
+### `transformComponent`
+
+Converts Figma component instances into framework-specific component code.
+
+**Use case:** Generate React/Vue component invocations with proper props
+
+## Simple example
+
+Here's a minimal plugin that converts CSS to Stylus syntax and hides the JavaScript block:
+
+```ts
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'Stylus Converter',
+  code: {
+    css: {
+      title: 'Stylus',
+      lang: 'stylus',
+      transform({ style }) {
+        return Object.entries(style)
+          .map(([key, value]) => `${key} ${value}`)
+          .join('\n')
+      }
+    },
+    js: false // Hide the built-in JavaScript code block
+  }
+})
+```
+
+## Type safety
+
+Plugins are fully typed when using the `@tempad-dev/plugins` package:
+
+```ts
+import { definePlugin, type TransformParams, type Plugin } from '@tempad-dev/plugins'
+
+// Full autocomplete and type checking
+export default definePlugin({
+  name: 'My Plugin',
+  code: {
+    css: {
+      transform(params: TransformParams) {
+        // params.code, params.style, params.options are all typed
+        return params.code
+      }
+    }
+  }
+})
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Create a Plugin" icon="code" href="/plugins/creating-plugins">
+    Learn how to build your own plugin with the SDK
+  </Card>
+  <Card title="Deploy a Plugin" icon="upload" href="/plugins/deploying-plugins">
+    Host and share your plugin with others
+  </Card>
+  <Card title="Available Plugins" icon="puzzle-piece" href="/plugins/available-plugins">
+    Browse the official plugin registry
+  </Card>
+</CardGroup>

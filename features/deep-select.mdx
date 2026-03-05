@@ -1,0 +1,198 @@
+---
+title: "Deep Select Mode"
+description: "Automatically select the deepest nested element with a single click in Figma's read-only view"
+icon: "hand-pointer"
+---
+
+## What It Does
+
+Deep Select mode eliminates the need for repeated double-clicks when inspecting nested elements in Figma's read-only view. When enabled, a single click automatically selects the lowest-level (deepest) node at that position.
+
+<Frame>
+  <img src="/images/deep-light.png" alt="Deep select mode enabled in preferences" />
+</Frame>
+
+## The Problem It Solves
+
+In Figma's read-only view, selecting deeply nested nodes requires:
+
+- **Double-clicking** to drill down through each container level
+- **Repeated double-clicks** to reach the lowest-level element
+- **Or holding** <kbd>⌘</kbd> (Mac) / <kbd>Ctrl</kbd> (Windows) while clicking each time
+
+Many users are unaware of the <kbd>⌘</kbd> + click shortcut, and even when known, it requires an extra key operation for every selection.
+
+## How to Enable
+
+1. Open TemPad Dev panel
+2. Click the **Preferences** icon (gear icon in the top right)
+3. In the **Tools** section, click the **Deep select** button to toggle it on
+
+<Check>
+  When enabled, the Deep select button appears highlighted
+</Check>
+
+## How It Works
+
+Once enabled, Deep Select mode automatically:
+
+1. **Intercepts your clicks** on the Figma canvas
+2. **Simulates <kbd>⌘</kbd> + click** behavior automatically
+3. **Selects the deepest element** at the click position
+4. **Updates the Code panel** with the selected element's styles
+
+### Technical Implementation
+
+Deep Select mode works by:
+
+- Monitoring canvas hover state
+- Setting a "lock" on the Meta key (<kbd>⌘</kbd>/<kbd>Ctrl</kbd>) when hovering over the canvas
+- Releasing the lock when you're not hovering, pressing Space, or actively clicking
+
+```typescript
+// Simplified implementation reference
+function syncMetaLock() {
+  const hovered = isCanvasHovered()
+  setLockMetaKey(hovered && options.value.deepSelectOn)
+}
+```
+
+## Behavior Details
+
+### When Deep Select is Active
+
+<Tabs>
+  <Tab title="Normal Click">
+    - Single click selects the **deepest nested element**
+    - Equivalent to <kbd>⌘</kbd> + click in normal Figma
+    - Updates TemPad Dev code panel immediately
+  </Tab>
+  <Tab title="During Zoom/Pan">
+    - Temporarily disabled while pressing <kbd>Space</kbd>
+    - Re-enabled automatically when you release <kbd>Space</kbd>
+    - Prevents interference with canvas navigation
+  </Tab>
+  <Tab title="During Wheel Zoom">
+    - Briefly pauses during scroll wheel operations
+    - Resumes after 200ms to prevent selection conflicts
+  </Tab>
+</Tabs>
+
+### When Deep Select is Inactive
+
+Clicking behaves like standard Figma read-only mode:
+- Single click selects the top-level frame or group
+- Double-click to drill down one level
+- Hold <kbd>⌘</kbd> + click to select deepest element manually
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Inspecting Component Internals">
+    Quickly access text styles, icons, or shapes nested deep inside design components without multiple double-clicks.
+    
+    **Example:** Selecting the icon inside a button inside a card inside a modal
+  </Accordion>
+  
+  <Accordion title="Developer Handoff">
+    Speed up the process of extracting styles from complex designs by eliminating navigation overhead.
+    
+    **Example:** Inspecting individual elements in a navigation bar with multiple nested groups
+  </Accordion>
+  
+  <Accordion title="Design QA">
+    Efficiently verify styling consistency across deeply nested elements in complex layouts.
+    
+    **Example:** Checking text styles in deeply nested list items
+  </Accordion>
+</AccordionGroup>
+
+## Interaction with Other Features
+
+### Measure Mode
+
+Deep Select and [Measure mode](/features/measure-mode) can be enabled simultaneously:
+
+- **Deep Select** controls **click behavior** (selects deepest element)
+- **Measure mode** controls **hover behavior** (shows spacing automatically)
+- Both work together seamlessly for efficient inspection
+
+### Scroll Into View
+
+After selecting an element with Deep Select:
+
+1. The element appears in the Meta section at the top of TemPad Dev
+2. Click the **Scroll into view** button to center it in the viewport
+3. Learn more in [Scroll Selection Into View](/features/scroll-into-view)
+
+## Compatibility
+
+<Warning>
+  Deep Select mode only works in Figma's **read-only view** or when using TemPad Dev as a browser extension. It does not affect Figma's desktop app behavior.
+</Warning>
+
+### Supported Platforms
+
+- Chrome/Edge browser extension (full support)
+- Figma web app in read-only mode (full support)
+- Figma web app with edit access (limited - use native shortcuts)
+- Figma desktop app (not supported - use native shortcuts)
+
+## Tips and Best Practices
+
+<Tip>
+  **Toggle it on by default** - If you frequently inspect nested elements, keep Deep Select enabled to save clicks.
+</Tip>
+
+<Tip>
+  **Combine with Measure mode** - Enable both features for the fastest inspection workflow: click to select deeply, hover to measure spacing.
+</Tip>
+
+<Tip>
+  **Disable when rearranging views** - If you need to select parent frames for navigation, temporarily disable Deep Select.
+</Tip>
+
+<Note>
+  Deep Select temporarily disables itself during certain interactions (space bar for panning, pointer down events) to avoid interfering with normal canvas operations.
+</Note>
+
+## Keyboard Integration
+
+Deep Select mode integrates with Figma's keyboard shortcuts:
+
+| Shortcut | Behavior with Deep Select |
+|----------|---------------------------|
+| <kbd>Space</kbd> + drag | Temporarily disables Deep Select for panning |
+| <kbd>Shift</kbd> + click | Add deeply nested element to multi-selection |
+| <kbd>Alt</kbd> + hover | Works normally with [Measure mode](/features/measure-mode) |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Deep Select isn't working">
+    **Check these:**
+    - Is the Deep select button highlighted in Preferences?
+    - Are you in Figma's read-only view (not the desktop app)?
+    - Are you hovering over the canvas when clicking?
+    - Try toggling Deep Select off and on again
+  </Accordion>
+  
+  <Accordion title="Can't select parent frames">
+    **Solution:** Temporarily disable Deep Select mode when you need to select container frames rather than nested elements.
+  </Accordion>
+  
+  <Accordion title="Conflicts with panning">
+    **Normal behavior:** Deep Select automatically disables when you press <kbd>Space</kbd> and re-enables when you release it.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Measure Mode" icon="ruler" href="/features/measure-mode">
+    Automatically show spacing measurements on hover
+  </Card>
+  <Card title="Scroll Into View" icon="eye" href="/features/scroll-into-view">
+    Center selected elements in the viewport
+  </Card>
+</CardGroup>

@@ -1,80 +1,551 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with TemPad Dev in 5 minutes - From installation to extracting your first code
 ---
 
-## Get started in three steps
+## What You'll Learn
 
-Get your documentation site running locally and make your first customization.
+This guide walks you through:
 
-### Step 1: Set up your local environment
+- Installing the TemPad Dev extension
+- Opening a Figma file and selecting elements
+- Extracting CSS and JavaScript code
+- Configuring basic preferences
+- Using plugins to customize output
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Info>
+**Time to complete**: ~5 minutes
+</Info>
+
+## Step 1: Install Extension
+
+<Steps>
+  <Step title="Visit Chrome Web Store">
+    Navigate to the [TemPad Dev extension page](https://chrome.google.com/webstore/detail/tempad-dev/lgoeakbaikpkihoiphamaeopmliaimpc) in your Chromium-based browser
+  </Step>
+  
+  <Step title="Install Extension">
+    Click **Add to Chrome** and confirm the installation
+  </Step>
+  
+  <Step title="Verify Installation">
+    Check that TemPad Dev appears in your browser extensions list (`chrome://extensions`)
+  </Step>
+</Steps>
+
+## Step 2: Open Figma
+
+<Steps>
+  <Step title="Navigate to Figma">
+    Go to [figma.com](https://www.figma.com) and sign in to your account
+  </Step>
+  
+  <Step title="Open Any Design File">
+    Open an existing file or create a new design for testing. The extension works in both edit and view-only modes.
+  </Step>
+  
+  <Step title="Locate TemPad Dev Panel">
+    The TemPad Dev panel appears automatically in the Figma interface. Look for it in the right sidebar area.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    <Note>
+    If you don't see the panel, try refreshing the page with **Ctrl+Shift+R** (Cmd+Shift+R on Mac)
+    </Note>
+  </Step>
+</Steps>
 
-### Step 2: Deploy your changes
+## Step 3: Select Element
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+<Steps>
+  <Step title="Click Any Element">
+    Select any element on the Figma canvas - a button, text layer, frame, or component
+  </Step>
+  
+  <Step title="View Generated Code">
+    The TemPad Dev panel automatically updates to show:
+    - **CSS code**: Standard CSS properties
+    - **JavaScript code**: Object syntax for JSX/React
+  </Step>
+  
+  <Step title="Copy Code">
+    Click the copy icon in the code block header to copy the code to your clipboard
+  </Step>
+</Steps>
+
+### Example Output
+
+When you select a button element, you'll see:
+
+<CodeGroup>
+
+```css CSS
+background-color: #6699cc;
+color: #ffffff;
+font-family: "Inter", sans-serif;
+font-size: 16px;
+font-weight: 500;
+line-height: 24px;
+padding: 12px 24px;
+border-radius: 8px;
+box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+```
+
+```js JavaScript
+{
+  backgroundColor: '#6699cc',
+  color: '#ffffff',
+  fontFamily: '"Inter", sans-serif',
+  fontSize: 16,
+  fontWeight: 500,
+  lineHeight: 24,
+  padding: '12px 24px',
+  borderRadius: 8,
+  boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)'
+}
+```
+
+</CodeGroup>
+
+## Step 4: Configure Basics
+
+### Open Preferences
+
+<Steps>
+  <Step title="Access Settings">
+    Click the settings/gear icon in the TemPad Dev panel header
+  </Step>
+  
+  <Step title="Explore Options">
+    Review available configuration options
+  </Step>
+</Steps>
+
+### Configure CSS Units
+
+Convert pixel values to rem units:
+
+<Steps>
+  <Step title="Enable rem Units">
+    In Preferences, set **Units** to **rem**
+  </Step>
+  
+  <Step title="Set Root Font Size">
+    Configure **Root Font Size** (typically 16px)
+  </Step>
+  
+  <Step title="See Updated Output">
+    Select an element again to see rem-converted values:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
+    ```css
+    font-size: 1rem; /* 16px */
+    padding: 0.75rem 1.5rem; /* 12px 24px */
+    border-radius: 0.5rem; /* 8px */
+    ```
+  </Step>
+</Steps>
+
+### Apply Scale Factor
+
+Scale all values for different screen densities:
+
+<Steps>
+  <Step title="Set Scale">
+    In Preferences, adjust the **Scale** value (e.g., `0.5` for 50% scale)
+  </Step>
+  
+  <Step title="View Scaled Output">
+    Select an element to see scaled values:
+    
+    ```css
+    /* Original: 24px, Scale 0.5 */
+    font-size: 12px;
+    ```
+  </Step>
+</Steps>
+
+### Configure Variable Display
+
+Control how CSS variables appear in output:
+
+<Accordion title="Reference Mode">
+  Shows variable names only:
+  
+  ```css
+  background-color: var(--color-primary);
+  ```
 </Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
+<Accordion title="Resolved Mode">
+  Shows computed values only:
+  
+  ```css
+  background-color: #6699cc;
+  ```
 </Accordion>
 
-## Next steps
+<Accordion title="Both Mode (Recommended)">
+  Shows variable names with fallback values:
+  
+  ```css
+  background-color: var(--color-primary, #6699cc);
+  ```
+</Accordion>
 
-Now that you have your docs running, explore these key features:
+## Step 5: Enable Enhanced Features
+
+### Deep Select Mode
+
+<Info>
+Automatically selects the deepest nested element without repeated double-clicks. Perfect for complex components.
+</Info>
+
+<Steps>
+  <Step title="Enable Feature">
+    In Preferences, toggle **Deep Select Mode** ON
+  </Step>
+  
+  <Step title="Test It Out">
+    Click a complex component with nested layers. TemPad Dev automatically selects the lowest-level node.
+  </Step>
+</Steps>
+
+**Before Deep Select:**
+- Click → selects outer frame
+- Double-click → selects inner group  
+- Double-click again → selects actual element
+
+**With Deep Select:**
+- Single click → selects actual element directly
+
+### Measure to Selection Mode
+
+<Info>
+Displays spacing measurements automatically without holding modifier keys.
+</Info>
+
+<Steps>
+  <Step title="Enable Feature">
+    In Preferences, toggle **Measure to Selection Mode** ON
+  </Step>
+  
+  <Step title="View Measurements">
+    Select any element, then hover over nearby elements to see spacing measurements displayed automatically
+  </Step>
+</Steps>
+
+### Scroll Selection Into View
+
+<Steps>
+  <Step title="Select an Element">
+    Choose any element on the canvas
+  </Step>
+  
+  <Step title="Find Scroll Button">
+    Hover over the node name section in the TemPad Dev inspect panel
+  </Step>
+  
+  <Step title="Click to Center">
+    Click the scroll button to center the selection in the Figma viewport at 100% zoom
+  </Step>
+</Steps>
+
+## Step 6: Install Your First Plugin
+
+Plugins customize code output for different frameworks and design systems.
+
+### Install Tailwind CSS Plugin
+
+<Steps>
+  <Step title="Open Plugin Settings">
+    Navigate to **Preferences → Plugins**
+  </Step>
+  
+  <Step title="Add Plugin">
+    Enter the plugin name:
+    
+    ```
+    @tailwind
+    ```
+  </Step>
+  
+  <Step title="Click Add">
+    The plugin installs automatically from the built-in registry
+  </Step>
+  
+  <Step title="View Tailwind Output">
+    Select an element to see Tailwind CSS classes:
+    
+    ```html
+    <div class="bg-blue-500 text-white font-medium px-6 py-3 rounded-lg shadow">
+      Button Text
+    </div>
+    ```
+  </Step>
+</Steps>
+
+### Available Built-in Plugins
+
+Install plugins by entering their `@name` in the plugin settings:
+
+- **@tailwind** - CSS to Tailwind CSS classes
+- **@react-native** - React Native StyleSheet format
+- **@kong** - Kong Design System components
+- **@nuxt** - Nuxt UI components
+- **@fubukicss/unocss** - UnoCSS utilities
+
+### Install Custom Plugin from URL
+
+<Steps>
+  <Step title="Get Plugin URL">
+    Find a plugin repository (or create your own) and copy the raw JavaScript file URL:
+    
+    ```
+    https://raw.githubusercontent.com/username/tempad-plugin/main/plugin.js
+    ```
+  </Step>
+  
+  <Step title="Add URL in Preferences">
+    Paste the full URL into **Preferences → Plugins** and click Add
+  </Step>
+  
+  <Step title="Verify Installation">
+    Select an element and check that new code blocks appear according to the plugin configuration
+  </Step>
+</Steps>
+
+## Common Workflows
+
+### Extract Design Tokens
+
+<Steps>
+  <Step title="Select Element with Variables">
+    Choose an element that uses Figma variables/styles
+  </Step>
+  
+  <Step title="Set Variable Display to Both">
+    In Preferences, set **Variable Display** to **Both**
+  </Step>
+  
+  <Step title="Copy Variable References">
+    The output includes both variable names and fallback values:
+    
+    ```css
+    color: var(--color-text-primary, #1a1a1a);
+    background: var(--color-surface-raised, #ffffff);
+    ```
+  </Step>
+</Steps>
+
+### Generate Component Props
+
+<Steps>
+  <Step title="Select Component Instance">
+    Click any component instance on the canvas
+  </Step>
+  
+  <Step title="View Component Code">
+    If using a plugin with `transformComponent` hook, you'll see component invocation code:
+    
+    ```jsx
+    <Button variant="primary" size="lg">
+      Click me
+    </Button>
+    ```
+  </Step>
+</Steps>
+
+### Export for Multiple Frameworks
+
+<Steps>
+  <Step title="Install Multiple Plugins">
+    Add plugins for different frameworks:
+    
+    ```
+    @tailwind
+    @react-native
+    ```
+  </Step>
+  
+  <Step title="Select Element">
+    Click any element on the canvas
+  </Step>
+  
+  <Step title="View All Formats">
+    The Code panel shows multiple code blocks:
+    - Standard CSS
+    - JavaScript object
+    - Tailwind classes
+    - React Native StyleSheet
+  </Step>
+  
+  <Step title="Copy Desired Format">
+    Click the copy icon for the format you need
+  </Step>
+</Steps>
+
+## Tips and Best Practices
+
+<Accordion title="Use Deep Select for Nested Components">
+  Enable Deep Select Mode when working with complex components that have many nested layers. This saves time by eliminating repeated double-clicks.
+</Accordion>
+
+<Accordion title="Configure Units Per Project">
+  Set your units (px vs rem) based on project requirements. Most modern web projects benefit from rem units for better accessibility.
+</Accordion>
+
+<Accordion title="Create Custom Plugins for Design Systems">
+  If your team uses a custom design system, create a plugin to map Figma components to your actual component library. See the plugin development guide for details.
+</Accordion>
+
+<Accordion title="Use Variable Display: Both">
+  The "Both" mode for variable display provides the most useful output - you get variable names for design tokens while preserving fallback values for reference.
+</Accordion>
+
+<Accordion title="Combine with Figma Dev Mode">
+  TemPad Dev complements Figma's native Dev Mode. Use Dev Mode for layout and spacing, and TemPad Dev for extracting actual code.
+</Accordion>
+
+## Troubleshooting
+
+### Panel Not Appearing
+
+<Steps>
+  <Step title="Hard Refresh">
+    Press **Ctrl+Shift+R** (Cmd+Shift+R on Mac) to hard refresh the Figma page
+  </Step>
+  
+  <Step title="Check Extension Status">
+    Verify TemPad Dev is enabled in `chrome://extensions`
+  </Step>
+  
+  <Step title="Check Figma URL">
+    Ensure you're on a valid Figma file URL (`figma.com/design/*` or `figma.com/file/*`)
+  </Step>
+</Steps>
+
+### Code Not Updating
+
+<Steps>
+  <Step title="Reselect Element">
+    Click away and reselect the element
+  </Step>
+  
+  <Step title="Check Element Type">
+    Some element types (like locked layers) may have limited inspection
+  </Step>
+  
+  <Step title="Disable Conflicting Extensions">
+    Temporarily disable other Figma-related extensions
+  </Step>
+</Steps>
+
+### Plugin Not Working
+
+<Warning>
+Plugin URLs must support CORS. Use GitHub raw URLs or Gist URLs for reliable access.
+</Warning>
+
+<Steps>
+  <Step title="Verify Plugin URL">
+    Test the URL in your browser to ensure it returns valid JavaScript
+  </Step>
+  
+  <Step title="Check Export Format">
+    Plugin must use `export default definePlugin(...)` or `export const plugin = ...`
+  </Step>
+  
+  <Step title="Remove and Reinstall">
+    Delete the plugin and add it again to clear cached errors
+  </Step>
+  
+  <Step title="Check Browser Console">
+    Open DevTools (F12) and look for plugin-related errors
+  </Step>
+</Steps>
+
+## Next Steps
+
+### Learn More
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Plugin Development" icon="puzzle-piece" href="/plugins/overview">
+    Create custom plugins to transform code output for your workflow
+  </Card>
+  
+  <Card title="MCP Integration" icon="brain" href="/mcp/setup">
+    Connect TemPad Dev to AI coding agents via Model Context Protocol
+  </Card>
+  
+  <Card title="Configuration Reference" icon="gear" href="/configuration/preferences">
+    Explore all configuration options and preferences
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/define-plugin">
+    Learn about the plugin API and available hooks
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+### Join the Community
+
+<CardGroup cols={2}>
+  <Card title="GitHub Repository" icon="github" href="https://github.com/ecomfe/tempad-dev">
+    View source code, report issues, and contribute
+  </Card>
+  
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/MXGXwtkEck">
+    Chat with other users and get help
+  </Card>
+</CardGroup>
+
+### Create Your First Plugin
+
+Ready to customize TemPad Dev for your specific needs? Follow this example:
+
+<Steps>
+  <Step title="Install Plugin SDK">
+    ```bash
+    npm install -D @tempad-dev/plugins
+    ```
+  </Step>
+  
+  <Step title="Create Plugin File">
+    ```typescript
+    import { definePlugin } from '@tempad-dev/plugins'
+    
+    export default definePlugin({
+      name: 'My Custom Plugin',
+      code: {
+        css: {
+          title: 'Custom CSS',
+          transform({ style }) {
+            // Transform CSS properties
+            return Object.entries(style)
+              .map(([key, value]) => `${key}: ${value};`)
+              .join('\n')
+          }
+        }
+      }
+    })
+    ```
+  </Step>
+  
+  <Step title="Deploy to GitHub">
+    Push your plugin to a GitHub repository and use the raw URL to install it
+  </Step>
+</Steps>
+
+<Info>
+For complete plugin development guide, see the [Plugin Development documentation](/plugins/overview).
+</Info>
+
+## Summary
+
+You've learned how to:
+
+- ✅ Install and verify the TemPad Dev extension
+- ✅ Open Figma and locate the TemPad Dev panel
+- ✅ Select elements and extract CSS/JavaScript code
+- ✅ Configure units, scale, and variable display
+- ✅ Enable enhanced features like Deep Select
+- ✅ Install and use plugins for framework-specific output
+
+**You're ready to streamline your design-to-code workflow!**

@@ -1,0 +1,75 @@
+---
+title: MCP Server Overview
+description: Pull Figma design code and context directly into coding agents and IDEs
+---
+
+TemPad Dev ships a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that enables coding agents and IDEs to pull code and context directly from the node you have selected in Figma.
+
+## What is MCP?
+
+The Model Context Protocol is an open standard that allows AI assistants to securely connect to external data sources and tools. TemPad Dev's MCP server acts as a bridge between your Figma designs and your development environment.
+
+## Key Capabilities
+
+With the TemPad Dev panel open and MCP enabled, the server exposes two primary tools:
+
+### get_code
+
+High-fidelity JSX/Vue + TailwindCSS code output by default, including:
+- Generated markup with Tailwind-like utility classes
+- Attached binary assets (images, SVGs) with download URLs
+- Design tokens and variable references
+- Codegen preset and configuration metadata
+- Warnings about truncation, auto-layout inference, or depth limits
+
+### get_structure
+
+A structural outline providing:
+- Node hierarchy (ids, types, names)
+- Geometry information (x, y, width, height)
+- Parent-child relationships
+- Layout context for understanding overlap and positioning
+
+## Asset Handling
+
+Binary assets are returned as metadata with HTTP download URLs (`asset.url`) in tool responses. The MCP server:
+
+- Stores assets temporarily with configurable TTL (default 30 days)
+- Provides HTTP endpoints for downloading asset bytes
+- Handles PNG, SVG, and other binary formats
+- Includes asset dimensions and MIME types in metadata
+
+<Note>
+Asset MCP resources are not exposed via `resources/list` or `resources/read`. Assets are tool-linked and ephemeral.
+</Note>
+
+## How It Works
+
+1. **Extension Connection**: The TemPad Dev browser extension connects to the MCP server via WebSocket
+2. **Tool Calls**: When an agent invokes a tool (e.g., `get_code`), the MCP server proxies the request to the active extension
+3. **Code Generation**: The extension runs its codegen pipeline on the selected Figma node
+4. **Response**: Generated code, assets, and metadata are returned to the agent via MCP
+
+## Use Cases
+
+- **AI-Assisted Development**: Let coding agents translate Figma designs into production-ready UI code
+- **Design-to-Code Automation**: Automate the conversion of design selections into component code
+- **Context-Aware Refactoring**: Provide agents with precise design specifications for updating existing components
+- **Asset Extraction**: Programmatically download design assets for your project's asset pipeline
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Setup Guide" icon="rocket" href="/mcp/setup">
+    Install and configure the MCP server
+  </Card>
+  <Card title="Tools Reference" icon="wrench" href="/mcp/tools">
+    Detailed documentation for available tools
+  </Card>
+  <Card title="Agent Skill" icon="wand-magic-sparkles" href="/mcp/agent-skill">
+    Install the Figma-to-code skill for best results
+  </Card>
+  <Card title="Configuration" icon="gear" href="/mcp/configuration">
+    Environment variables and advanced options
+  </Card>
+</CardGroup>

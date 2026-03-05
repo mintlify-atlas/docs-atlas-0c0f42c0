@@ -1,0 +1,414 @@
+---
+title: Shared Package
+description: Shared contracts between extension and MCP server
+---
+
+## Overview
+
+The shared package (`@tempad-dev/shared`) provides shared contracts, schemas, and types used by both the browser extension and MCP server.
+
+**Location:** `packages/shared/`
+
+**NPM Package:** `@tempad-dev/shared` (private)
+
+**Repository:** https://github.com/ecomfe/tempad-dev
+
+## Responsibilities
+
+- Zod schemas for MCP tools
+- TypeScript types for tool parameters and results
+- Constants for payload and message limits
+- WebSocket protocol types
+- Figma utility functions (color, gradient, stroke)
+
+## Tech Stack
+
+- **Language:** TypeScript
+- **Schemas:** Zod
+- **Build Tool:** tsdown
+
+## Directory Structure
+
+```
+packages/shared/
+├── src/
+│   ├── index.ts              # Public exports
+│   ├── mcp/
+│   │   ├── constants.ts      # Payload and message limits
+│   │   ├── tools.ts          # Tool schemas and result types
+│   │   ├── protocol.ts       # WebSocket message shapes
+│   │   ├── errors.ts         # Error types
+│   │   └── index.ts          # MCP exports
+│   └── figma/
+│       ├── color.ts          # Color formatter utilities
+│       ├── gradient.ts       # Gradient utilities
+│       ├── stroke.ts         # Stroke utilities
+│       ├── style-resolver.ts # Style resolution
+│       └── index.ts          # Figma exports
+├── tests/                    # Test files
+│   ├── mcp/
+│   │   └── tools.test.ts
+│   └── figma/
+│       └── color.test.ts
+├── tsdown.config.ts          # Build configuration
+└── package.json
+```
+
+## Key Commands
+
+### Building
+
+```bash
+# From root (usually runs automatically)
+pnpm build
+
+# From package directory
+pnpm -C packages/shared build
+
+# Or with filter
+pnpm --filter @tempad-dev/shared build
+```
+
+**Output:**
+- `dist/index.js` - ESM export
+- `dist/index.d.ts` - TypeScript types
+- `dist/mcp/` - MCP schemas and types
+- `dist/figma/` - Figma utilities
+
+### Testing
+
+```bash
+# Run tests
+pnpm -C packages/shared test:run
+
+# With coverage
+pnpm -C packages/shared test:coverage
+
+# Watch mode
+pnpm -C packages/shared test
+```
+
+### Quality Checks
+
+```bash
+# Typecheck
+pnpm -C packages/shared typecheck
+
+# Lint
+pnpm -C packages/shared lint
+pnpm -C packages/shared lint:fix
+
+# Format
+pnpm -C packages/shared format
+pnpm -C packages/shared format:check
+```
+
+## MCP Schemas
+
+### Tool Schemas
+
+**File:** `src/mcp/tools.ts`
+
+Defines Zod schemas for all MCP tools:
+
+```typescript
+import { z } from 'zod'
+
+// get_code parameters
+export const GetCodeParametersSchema = z.object({
+  nodeId: z.string(),
+  lang: z.enum(['react', 'vue', 'html']).optional(),
+  // ... more fields
+})
+
+export type GetCodeParameters = z.infer<typeof GetCodeParametersSchema>
+
+// get_code result
+export const GetCodeResultSchema = z.object({
+  lang: z.string(),
+  code: z.string(),
+  assets: z.array(AssetSchema).optional(),
+  warnings: z.array(z.string()).optional()
+})
+
+export type GetCodeResult = z.infer<typeof GetCodeResultSchema>
+```
+
+### Constants
+
+**File:** `src/mcp/constants.ts`
+
+Defines limits and constraints:
+
+```typescript
+// Payload limits
+export const MAX_PAYLOAD_SIZE = 10 * 1024 * 1024  // 10MB
+export const MAX_ASSET_SIZE = 5 * 1024 * 1024     // 5MB
+
+// Message constants
+export const REQUEST_TIMEOUT_MS = 30000  // 30s
+```
+
+### Protocol Types
+
+**File:** `src/mcp/protocol.ts`
+
+WebSocket message shapes:
+
+```typescript
+export type WSMessage =
+  | { type: 'request'; id: string; tool: string; params: unknown }
+  | { type: 'response'; id: string; result: unknown }
+  | { type: 'error'; id: string; error: string }
+```
+
+## Figma Utilities
+
+### Color Formatting
+
+**File:** `src/figma/color.ts`
+
+Color conversion utilities:
+
+```typescript
+export function formatColor(color: RGB): string {
+  const r = Math.round(color.r * 255)
+  const g = Math.round(color.g * 255)
+  const b = Math.round(color.b * 255)
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+}
+```
+
+### Gradient Utilities
+
+**File:** `src/figma/gradient.ts`
+
+Gradient formatting for CSS:
+
+```typescript
+export function formatGradient(paint: GradientPaint): string {
+  // Convert Figma gradient to CSS linear-gradient
+}
+```
+
+### Stroke Utilities
+
+**File:** `src/figma/stroke.ts`
+
+Stroke formatting for CSS:
+
+```typescript
+export function formatStroke(stroke: Paint): string {
+  // Convert Figma stroke to CSS border
+}
+```
+
+## Code Style Guidelines
+
+### Additive Schema Changes
+
+**Good:** Add optional fields
+
+```typescript
+const GetCodeResultSchema = z.object({
+  lang: z.string(),
+  code: z.string(),
+  warnings: z.array(z.string()).optional()  // New optional field
+})
+```
+
+**Avoid:** Breaking changes
+
+```typescript
+// Bad: Removed required field
+const GetCodeResultSchema = z.object({
+  lang: z.string()
+  // code field removed - BREAKING
+})
+```
+
+### Type Inference
+
+Always infer types from Zod schemas:
+
+```typescript
+export const MySchema = z.object({ /* ... */ })
+export type MyType = z.infer<typeof MySchema>
+```
+
+Do not manually duplicate types.
+
+## Testing Strategy
+
+### Strict Pure Coverage
+
+These files have enforced coverage:
+
+- `src/index.ts`
+- `src/mcp/constants.ts`
+- `src/mcp/errors.ts`
+- `src/mcp/index.ts`
+- `src/mcp/protocol.ts`
+- `src/mcp/tools.ts`
+- `src/figma/index.ts`
+- `src/figma/color.ts`
+- `src/figma/gradient.ts`
+- `src/figma/stroke.ts`
+- `src/figma/style-resolver.ts`
+
+### Test Files
+
+**Location:** `tests/`
+
+**Pattern:** `*.test.ts` (Node runtime only)
+
+### Example Test
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import { formatColor } from '../src/figma/color'
+
+describe('formatColor', () => {
+  it('converts RGB to hex', () => {
+    expect(formatColor({ r: 1, g: 0, b: 0 })).toBe('#ff0000')
+  })
+
+  it('handles fractional values', () => {
+    expect(formatColor({ r: 0.5, g: 0.5, b: 0.5 })).toBe('#808080')
+  })
+})
+```
+
+## Boundaries and Constraints
+
+### Coordinated Schema Changes
+
+Never change schemas without updating downstream packages:
+
+1. **Update shared** - Make schema change
+2. **Update mcp-server** - Handle new schema
+3. **Update extension** - Use new schema
+
+Validation order:
+
+```bash
+pnpm --filter @tempad-dev/shared test:run
+pnpm --filter @tempad-dev/mcp test:run
+pnpm --filter @tempad-dev/extension test:run
+```
+
+### Asset URI Format
+
+Do not change `asset://` URI format without cross-package review.
+
+### Payload Caps
+
+Changing `MAX_PAYLOAD_SIZE` or `MAX_ASSET_SIZE` requires:
+1. Extension validation
+2. MCP server validation
+3. Documentation update
+
+### Dependencies
+
+Do not add new dependencies without approval. Current dependencies:
+- `zod` - Schema validation (required)
+
+## Verification Checklist
+
+### Always Run
+
+```bash
+pnpm -C packages/shared typecheck
+pnpm -C packages/shared lint
+pnpm -C packages/shared test:run
+```
+
+### Coverage Check
+
+```bash
+pnpm -C packages/shared test:coverage
+```
+
+### Downstream Validation
+
+After schema changes:
+
+```bash
+# Build shared first
+pnpm --filter @tempad-dev/shared build
+
+# Validate downstream packages
+pnpm --filter @tempad-dev/mcp build
+pnpm --filter @tempad-dev/mcp test:run
+
+pnpm --filter @tempad-dev/extension build
+pnpm --filter @tempad-dev/extension test:run
+```
+
+## Change Migration Strategy
+
+### Adding Optional Fields
+
+1. Add field with `.optional()` in Zod schema
+2. Update TypeScript types (auto-inferred)
+3. Test in isolation
+4. Update downstream packages
+
+### Deprecating Fields
+
+1. Mark field as deprecated in comments
+2. Make field optional if not already
+3. Update downstream packages to stop using
+4. Remove in next major version
+
+### Renaming Fields
+
+Avoid renaming. Instead:
+
+1. Add new field
+2. Deprecate old field
+3. Support both during transition
+4. Remove old field in major version
+
+## Package Configuration
+
+### Exports
+
+From `package.json`:
+
+```json
+{
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}
+```
+
+### Files
+
+Only `dist/` is published (if package were public):
+
+```json
+{
+  "files": ["dist"]
+}
+```
+
+## Related Documentation
+
+**In source repo:**
+- Testing architecture: `docs/testing/architecture.md`
+- Extension requirements: `docs/extension/requirements.md`
+- Extension design: `docs/extension/design.md`
+
+**In this site:**
+- [Architecture](/development/architecture)
+- [Testing](/development/testing)
+- [Building](/development/building)
+- [Extension Package](/development/extension)
+- [MCP Server Package](/development/mcp-server)

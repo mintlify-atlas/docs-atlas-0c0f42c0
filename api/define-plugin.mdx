@@ -1,0 +1,147 @@
+---
+title: 'definePlugin'
+description: 'Define a TemPad Dev plugin with full type support'
+---
+
+## Overview
+
+The `definePlugin` helper creates a TemPad Dev plugin configuration with full TypeScript type inference. It accepts a plugin configuration object and returns it with proper type annotations.
+
+## Function Signature
+
+```typescript
+export function definePlugin(plugin: Plugin): Plugin
+```
+
+## Parameters
+
+<ParamField path="plugin" type="Plugin" required>
+  Plugin configuration object supplying metadata and code blocks.
+  
+  <Expandable title="Plugin Properties">
+    <ParamField path="name" type="string" required>
+      Human-readable name displayed in the UI.
+    </ParamField>
+    
+    <ParamField path="code" type="CodeOptions" required>
+      Map of code block identifiers to configuration. Supports built-in blocks (`css`, `js`) and custom blocks.
+      
+      <Expandable title="CodeOptions">
+        Each code block can be configured with:
+        
+        <ParamField path="title" type="string">
+          The title of the code block (e.g., 'SCSS', 'Tailwind')
+        </ParamField>
+        
+        <ParamField path="lang" type="SupportedLang">
+          The language for syntax highlighting. Options: `'text'`, `'tsx'`, `'jsx'`, `'ts'`, `'js'`, `'vue'`, `'html'`, `'css'`, `'sass'`, `'scss'`, `'less'`, `'stylus'`, `'json'`
+        </ParamField>
+        
+        <ParamField path="transform" type="(params: TransformParams) => string">
+          Transform the generated CSS code. See [Transform Hooks](/api/transform-hooks#transform).
+        </ParamField>
+        
+        <ParamField path="transformVariable" type="(params: TransformVariableParams) => string">
+          Transform CSS variable references. See [Transform Hooks](/api/transform-hooks#transformvariable).
+        </ParamField>
+        
+        <ParamField path="transformPx" type="(params: TransformPxParams) => string">
+          Transform pixel values to desired units. See [Transform Hooks](/api/transform-hooks#transformpx).
+        </ParamField>
+        
+        <ParamField path="transformComponent" type="(params: TransformComponentParams) => DevComponent | string">
+          Transform design components to dev components. See [Transform Hooks](/api/transform-hooks#transformcomponent).
+        </ParamField>
+      </Expandable>
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="plugin" type="Plugin">
+  The same plugin configuration object, enabling type inference in user code.
+</ResponseField>
+
+## Example
+
+```typescript
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'My Custom Plugin',
+  code: {
+    css: {
+      title: 'CSS',
+      lang: 'css'
+    },
+    scss: {
+      title: 'SCSS',
+      lang: 'scss',
+      transformVariable: ({ code, name, value }) => {
+        // Transform CSS variables to SCSS variables
+        return `$${name.replace(/^--/, '')}`
+      },
+      transformPx: ({ value, options }) => {
+        // Convert px to rem
+        if (options.useRem) {
+          return `${value / options.rootFontSize}rem`
+        }
+        return `${value}px`
+      }
+    },
+    tailwind: {
+      title: 'Tailwind',
+      lang: 'jsx',
+      transformComponent: ({ component }) => {
+        // Custom component transformation
+        return {
+          name: 'div',
+          props: { className: 'custom-class' },
+          children: []
+        }
+      }
+    }
+  }
+})
+```
+
+## Built-in Code Blocks
+
+<CardGroup cols={2}>
+  <Card title="css" icon="code">
+    Standard CSS output
+  </Card>
+  <Card title="js" icon="code">
+    JavaScript/JSX output
+  </Card>
+</CardGroup>
+
+## Custom Code Blocks
+
+You can define custom code blocks by adding keys to the `code` object. Custom blocks inherit the same transformation capabilities as built-in blocks.
+
+## Disabling Code Blocks
+
+Set a code block to `false` to disable it:
+
+```typescript
+export default definePlugin({
+  name: 'Minimal Plugin',
+  code: {
+    css: { title: 'CSS', lang: 'css' },
+    js: false // Disable JS output
+  }
+})
+```
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="Transform Hooks" icon="webhook" href="/api/transform-hooks">
+    Learn about transformation functions
+  </Card>
+  <Card title="Types Reference" icon="brackets-curly" href="/api/types">
+    Full type definitions
+  </Card>
+</CardGroup>

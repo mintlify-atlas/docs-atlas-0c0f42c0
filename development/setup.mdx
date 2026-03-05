@@ -1,0 +1,249 @@
+---
+title: Development Setup
+description: Set up your local development environment for TemPad Dev
+---
+
+## Prerequisites
+
+- **Node.js:** 18 or higher
+- **pnpm:** Latest version
+- **Git:** For version control
+- **Chromium/Chrome:** For browser extension testing
+
+## Installation
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/ecomfe/tempad-dev.git
+cd tempad-dev
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+This installs all workspace dependencies and prepares build tools.
+
+### 3. Set Up Browser Tests (First Time Only)
+
+```bash
+pnpm test:ext:setup
+```
+
+This installs Playwright Chromium for browser tests.
+
+### 4. Install Git Hooks
+
+Git hooks are automatically installed via the `prepare` script:
+
+```bash
+pnpm prepare
+```
+
+This sets up Lefthook for pre-commit validation.
+
+## Development Workflow
+
+### Run the Extension in Development Mode
+
+```bash
+pnpm dev
+```
+
+This starts the WXT dev server for the browser extension. The extension reloads automatically on file changes.
+
+**To load in browser:**
+
+1. Open Chrome/Chromium
+2. Navigate to `chrome://extensions`
+3. Enable "Developer mode"
+4. Click "Load unpacked"
+5. Select `packages/extension/.output/chrome-mv3/`
+
+### Build All Packages
+
+```bash
+pnpm build
+```
+
+Builds all packages in dependency order:
+1. `@tempad-dev/shared`
+2. `@tempad-dev/plugins`
+3. `@tempad-dev/mcp`
+4. `@tempad-dev/extension`
+
+### Build Individual Packages
+
+```bash
+# Extension only
+pnpm build:ext
+
+# Plugins only
+pnpm build:plugins
+
+# MCP server only
+pnpm build:mcp
+```
+
+## Verification Commands
+
+Run these before submitting changes:
+
+### Typecheck
+
+```bash
+pnpm typecheck
+```
+
+Runs TypeScript type checking across all packages.
+
+### Lint
+
+```bash
+# Check for issues
+pnpm lint
+
+# Auto-fix issues
+pnpm lint:fix
+```
+
+Runs ESLint on all packages.
+
+### Format
+
+```bash
+# Format all files
+pnpm format
+
+# Check formatting
+pnpm format:check
+```
+
+Formats code using oxfmt and Prettier.
+
+### Test
+
+```bash
+# Run all tests once
+pnpm test:run
+
+# Watch mode
+pnpm test
+
+# With coverage
+pnpm test:coverage
+```
+
+See [Testing](/development/testing) for detailed test commands.
+
+## Package-Specific Commands
+
+Use `pnpm --filter` to run commands in specific packages:
+
+```bash
+# Extension
+pnpm --filter @tempad-dev/extension dev
+pnpm --filter @tempad-dev/extension build
+pnpm --filter @tempad-dev/extension test:run
+
+# MCP Server
+pnpm --filter @tempad-dev/mcp build
+pnpm --filter @tempad-dev/mcp test:run
+
+# Plugins
+pnpm --filter @tempad-dev/plugins build
+pnpm --filter @tempad-dev/plugins test:run
+
+# Shared
+pnpm --filter @tempad-dev/shared build
+pnpm --filter @tempad-dev/shared test:run
+```
+
+Alternatively, use `-C` to change directory:
+
+```bash
+pnpm -C packages/mcp-server build
+pnpm -C packages/plugins typecheck
+```
+
+## Pre-Commit Checklist
+
+Before committing changes, always run:
+
+1. **Typecheck:** `pnpm typecheck`
+2. **Lint:** `pnpm lint` or `pnpm lint:fix`
+3. **Test:** `pnpm test:run`
+
+These checks are enforced by Lefthook git hooks.
+
+## Troubleshooting
+
+### Dependency Issues
+
+If you encounter dependency resolution errors:
+
+```bash
+# Clean install
+rm -rf node_modules packages/*/node_modules
+pnpm install
+```
+
+### Build Errors
+
+Ensure packages are built in order:
+
+```bash
+# Build shared first (other packages depend on it)
+pnpm --filter @tempad-dev/shared build
+
+# Then build everything
+pnpm build
+```
+
+### Extension Not Loading
+
+If the extension fails to load:
+
+1. Check build output: `packages/extension/.output/chrome-mv3/`
+2. Rebuild: `pnpm build:ext`
+3. Check browser console for errors
+4. Verify manifest.json is present in output
+
+### Test Setup Failures
+
+If browser tests fail to run:
+
+```bash
+# Reinstall Playwright
+pnpm test:ext:setup
+
+# Or run directly
+pnpm --filter @tempad-dev/extension test:setup
+```
+
+## Editor Setup
+
+### VS Code
+
+Recommended extensions:
+- ESLint
+- Volar (Vue Language Features)
+- TypeScript Vue Plugin (Volar)
+
+### Type Checking in Editor
+
+Vue files require the TypeScript Vue Plugin for proper type checking. Install Volar in VS Code for best experience.
+
+## Next Steps
+
+- Read [Architecture](/development/architecture) to understand the codebase structure
+- See [Testing](/development/testing) for testing guidelines
+- Check [Building](/development/building) for build details
+- Review package-specific guides:
+  - [Extension](/development/extension)
+  - [MCP Server](/development/mcp-server)
+  - [Plugins](/development/plugins-package)
+  - [Shared](/development/shared)

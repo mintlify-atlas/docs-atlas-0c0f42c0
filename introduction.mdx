@@ -1,0 +1,184 @@
+---
+title: Introduction
+description: Inspect panel on Figma, for everyone - Extract CSS, JavaScript, and component code from Figma designs
+---
+
+## What is TemPad Dev?
+
+TemPad Dev is a powerful browser extension that brings developer-friendly inspection capabilities to Figma. It enables designers and developers to extract production-ready code directly from Figma designs, bridging the gap between design and implementation.
+
+<Note>
+TemPad Dev works seamlessly in both edit mode and view-only Figma files, making it perfect for handoff scenarios.
+</Note>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Inspect CSS Code" icon="code">
+    Extract CSS and JavaScript styles from any Figma element. Get standard CSS or JavaScript object syntax for JSX/React scenarios.
+  </Card>
+  
+  <Card title="Flexible Units" icon="ruler">
+    Configure CSS units (px, rem) and root font size. Apply scale factors to match your handoff requirements. Control variable display (Reference/Resolved/Both).
+  </Card>
+  
+  <Card title="Deep Select Mode" icon="mouse-pointer">
+    Automatically drill down to the lowest-level nodes without repeated double-clicks. Works even in read-only view.
+  </Card>
+  
+  <Card title="Measure to Selection" icon="arrows-left-right">
+    See spacing between nodes without holding modifier keys. Streamlined measurement workflow in view-only mode.
+  </Card>
+  
+  <Card title="Plugin System" icon="puzzle-piece">
+    Customize code output with JavaScript plugins. Support for Tailwind CSS, UnoCSS, React Native, and custom design systems.
+  </Card>
+  
+  <Card title="MCP Integration" icon="brain">
+    Pull code and context directly into AI coding agents via Model Context Protocol. Generate repo-ready UI from Figma selections.
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+### For Developers
+
+- **Faster Implementation**: Copy production-ready CSS and JavaScript directly from designs
+- **Accurate Handoff**: Eliminate guesswork with precise measurements and styles
+- **Framework Integration**: Generate code for React, Vue, React Native, and more via plugins
+- **Design System Mapping**: Transform Figma components into your design system components
+
+### For Designers
+
+- **Better Collaboration**: Share exact specifications with developers
+- **Quality Assurance**: Verify implementation matches design intent
+- **Documentation**: Extract design tokens and variables for style guides
+
+### For Teams
+
+- **Design-Dev Workflow**: Streamline the handoff process with consistent code output
+- **AI-Assisted Development**: Use MCP to have AI agents generate components from Figma
+- **Custom Standards**: Enforce team conventions through custom plugins
+
+## How It Works
+
+<Steps>
+  <Step title="Install the Extension">
+    Add TemPad Dev to your browser from the Chrome Web Store. The extension activates automatically on Figma pages.
+  </Step>
+  
+  <Step title="Open Figma Design">
+    Navigate to any Figma file (edit or view-only mode). The TemPad Dev panel appears alongside Figma's native tools.
+  </Step>
+  
+  <Step title="Select Elements">
+    Click any element on the canvas. Enable Deep Select mode for faster selection of nested elements.
+  </Step>
+  
+  <Step title="Extract Code">
+    View generated CSS and JavaScript code in the Code panel. Copy to clipboard or customize with plugins.
+  </Step>
+  
+  <Step title="Configure Output (Optional)">
+    Adjust units, scale, and variable display in Preferences. Install plugins for framework-specific output.
+  </Step>
+</Steps>
+
+## Code Output Examples
+
+### Standard CSS
+
+```css
+background-color: #6699cc;
+color: #ffffff;
+font-size: 16px;
+font-weight: 500;
+padding: 12px 24px;
+border-radius: 8px;
+```
+
+### JavaScript Object (for JSX)
+
+```js
+{
+  backgroundColor: '#6699cc',
+  color: '#ffffff',
+  fontSize: 16,
+  fontWeight: 500,
+  padding: '12px 24px',
+  borderRadius: 8
+}
+```
+
+### With CSS Variables
+
+```css
+background-color: var(--color-primary, #6699cc);
+color: var(--color-white, #ffffff);
+font-size: var(--font-size-base, 16px);
+```
+
+### Unit Conversion (px to rem)
+
+```css
+background-color: #6699cc;
+font-size: 1rem; /* 16px */
+padding: 0.75rem 1.5rem; /* 12px 24px */
+border-radius: 0.5rem; /* 8px */
+```
+
+## Architecture
+
+<Info>
+TemPad Dev is built with **WXT** (Web Extension Toolkit), **TypeScript**, and **Vue 3**. The extension injects into Figma's page context to access design data while maintaining security through isolated Web Workers.
+</Info>
+
+### Components
+
+- **Browser Extension**: Runs on `https://www.figma.com/*` and provides the inspection UI
+- **Plugin System**: JavaScript plugins run in isolated Web Workers for security
+- **MCP Server**: Optional Node.js server for AI agent integration via Model Context Protocol
+
+### Plugin Architecture
+
+Plugins transform the generated code output without accessing the DOM:
+
+```typescript
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'My Plugin',
+  code: {
+    css: {
+      title: 'Stylus',
+      lang: 'stylus',
+      transform({ style }) {
+        return Object.entries(style)
+          .map(([key, value]) => `${key} ${value}`)
+          .join('\n')
+      }
+    },
+    js: false // Hide JavaScript code block
+  }
+})
+```
+
+## Open Source
+
+TemPad Dev is open source and available on [GitHub](https://github.com/ecomfe/tempad-dev). Contributions are welcome!
+
+<Card title="Contribute on GitHub" icon="github" href="https://github.com/ecomfe/tempad-dev">
+  View source code, report issues, and contribute to the project.
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install TemPad Dev and get started in minutes
+  </Card>
+  
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Follow a step-by-step guide to your first code extraction
+  </Card>
+</CardGroup>

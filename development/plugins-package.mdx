@@ -1,0 +1,320 @@
+---
+title: Plugins Package
+description: Public SDK for plugin authors to customize code generation
+---
+
+## Overview
+
+The plugins package (`@tempad-dev/plugins`) is a public SDK that provides types, hooks, and helpers for plugin authors to customize TemPad Dev's code generation behavior.
+
+**Location:** `packages/plugins/`
+
+**NPM Package:** `@tempad-dev/plugins`
+
+**Repository:** https://github.com/ecomfe/tempad-dev
+
+## Responsibilities
+
+- Stable, documented plugin APIs
+- Types and helpers safe for external users
+- Transform hooks for code generation
+- Maintaining README examples
+
+## Tech Stack
+
+- **Language:** TypeScript
+- **Build Tool:** tsdown
+- **Output:** ESM + TypeScript declarations
+
+## Directory Structure
+
+```
+packages/plugins/
+├── src/
+│   └── index.ts              # Public exports (types, hooks, helpers)
+├── tests/                    # Test files
+├── README.md                 # English documentation
+├── README.zh-Hans.md         # Chinese documentation
+├── tsdown.config.ts          # Build configuration
+└── package.json
+```
+
+## Key Commands
+
+### Building
+
+```bash
+# From root
+pnpm build:plugins
+
+# From package directory
+pnpm -C packages/plugins build
+
+# Or with filter
+pnpm --filter @tempad-dev/plugins build
+```
+
+**Output:**
+- `dist/index.js` - ESM export
+- `dist/index.d.ts` - TypeScript types
+
+### Testing
+
+```bash
+# Run tests
+pnpm -C packages/plugins test:run
+
+# With coverage
+pnpm -C packages/plugins test:coverage
+
+# Watch mode
+pnpm -C packages/plugins test
+```
+
+### Quality Checks
+
+```bash
+# Typecheck
+pnpm -C packages/plugins typecheck
+
+# Lint
+pnpm -C packages/plugins lint
+pnpm -C packages/plugins lint:fix
+
+# Format
+pnpm -C packages/plugins format
+pnpm -C packages/plugins format:check
+```
+
+### Publishing
+
+```bash
+# From root
+pnpm npm:plugins
+
+# Manually
+pnpm -C packages/plugins publish --access public
+```
+
+**Pre-publish:** `build` runs automatically via `prepublishOnly`
+
+## Public API
+
+### Transform Hooks
+
+Plugins provide transform hooks for customizing code generation:
+
+```typescript
+export type TransformOptions = {
+  // Transform pixel values
+  transformPx?: (value: number) => number
+
+  // Transform CSS variable names
+  transformVariable?: (name: string) => string
+
+  // Transform color values
+  transformColor?: (color: string) => string
+
+  // ... more hooks
+}
+```
+
+### Example Usage
+
+```typescript
+import type { TransformOptions } from '@tempad-dev/plugins'
+
+const options: TransformOptions = {
+  transformPx: (px) => px / 16,  // Convert to rem
+  transformVariable: (name) => `var(--${name})`
+}
+```
+
+### Type Exports
+
+All public types are exported from `src/index.ts`:
+
+```typescript
+export type TransformOptions = { /* ... */ }
+export type CodegenContext = { /* ... */ }
+export type PluginHooks = { /* ... */ }
+```
+
+## Code Style Guidelines
+
+### Additive API Changes
+
+**Good:** Add optional fields
+
+```typescript
+export type TransformOptions = {
+  transformPx?: (value: number) => number
+  transformVariable?: (name: string) => string
+  transformColor?: (color: string) => string  // New optional field
+}
+```
+
+**Avoid:** Breaking changes
+
+```typescript
+// Bad: Removed existing hook
+export type TransformOptions = {
+  transformVariable?: (name: string) => string
+  // transformPx removed - BREAKING
+}
+```
+
+### Always Update README
+
+When public types change, update both:
+- `README.md` (English)
+- `README.zh-Hans.md` (Chinese)
+
+## Testing Strategy
+
+### Coverage Focus
+
+Coverage focused on `src/index.ts`:
+
+```bash
+pnpm -C packages/plugins test:coverage
+```
+
+### Test Files
+
+**Location:** `tests/`
+
+**Pattern:** `*.test.ts` (Node runtime only)
+
+### Example Test
+
+```typescript
+import { describe, it, expect } from 'vitest'
+import type { TransformOptions } from '../src/index'
+
+describe('TransformOptions', () => {
+  it('allows optional transform hooks', () => {
+    const options: TransformOptions = {
+      transformPx: (px) => px / 16
+    }
+
+    expect(options.transformPx?.(16)).toBe(1)
+  })
+})
+```
+
+## Boundaries and Constraints
+
+### Never Introduce Extension Internals
+
+Do not expose extension-specific concepts:
+
+```typescript
+// Bad: Extension-specific type
+export type MCPToolContext = { /* ... */ }
+
+// Good: Generic, public type
+export type TransformContext = { /* ... */ }
+```
+
+### No Runtime Dependencies
+
+Do not add runtime dependencies without approval. The package should be lightweight.
+
+### No Breaking Changes
+
+Treat every change as public-facing. Do not make breaking changes unless explicitly planned.
+
+## Verification Checklist
+
+### Always Run
+
+```bash
+pnpm -C packages/plugins typecheck
+pnpm -C packages/plugins lint
+pnpm -C packages/plugins test:run
+```
+
+### README Updates
+
+When changing public types:
+
+1. Update `README.md` examples
+2. Update `README.zh-Hans.md` examples
+3. Verify code examples compile
+
+### Coverage Check
+
+```bash
+pnpm -C packages/plugins test:coverage
+```
+
+## Publishing Workflow
+
+1. **Update version** in `package.json`
+2. **Update README** if API changed
+3. **Build:**
+   ```bash
+   pnpm -C packages/plugins build
+   ```
+4. **Verify:**
+   ```bash
+   pnpm -C packages/plugins typecheck
+   pnpm -C packages/plugins test:run
+   ```
+5. **Publish:**
+   ```bash
+   pnpm npm:plugins
+   ```
+
+**Pre-publish hook** runs `build` automatically.
+
+## Package Configuration
+
+### Exports
+
+From `package.json`:
+
+```json
+{
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  }
+}
+```
+
+### Files
+
+Only `dist/` and `README.md` are published:
+
+```json
+{
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}
+```
+
+## Versioning
+
+Follow semantic versioning:
+
+- **Patch:** Bug fixes, documentation updates
+- **Minor:** New optional fields, backward-compatible additions
+- **Major:** Breaking changes, removed/renamed fields
+
+## Related Documentation
+
+**In source repo:**
+- Testing architecture: `docs/testing/architecture.md`
+
+**In this site:**
+- [Architecture](/development/architecture)
+- [Testing](/development/testing)
+- [Building](/development/building)

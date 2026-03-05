@@ -1,0 +1,346 @@
+---
+title: Deploying Plugins
+description: Host and share your TemPad Dev plugins
+---
+
+## Build your plugin
+
+Before deploying, ensure your plugin is compiled to a single JavaScript file:
+
+### TypeScript compilation
+
+If you're using TypeScript, compile it to JavaScript:
+
+<CodeGroup>
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "module": "ES2020",
+    "target": "ES2020",
+    "moduleResolution": "bundler",
+    "outDir": "dist"
+  }
+}
+```
+
+```bash Build command
+tsc
+```
+</CodeGroup>
+
+### Using a bundler
+
+For dependencies or advanced builds, use a bundler like Vite, tsdown, or esbuild:
+
+<CodeGroup>
+```ts vite.config.ts
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: 'src/index.ts',
+      formats: ['es'],
+      fileName: 'plugin'
+    },
+    rollupOptions: {
+      external: ['@tempad-dev/plugins']
+    }
+  }
+})
+```
+
+```ts tsdown.config.ts
+import { defineConfig } from 'tsdown'
+
+export default defineConfig({
+  entry: 'src/index.ts',
+  format: 'esm',
+  dts: false
+})
+```
+</CodeGroup>
+
+<Warning>
+  Your plugin must be a valid ES module. CommonJS (`module.exports`, `require()`) is not supported.
+</Warning>
+
+## Hosting options
+
+Plugins must be accessible via HTTPS and support cross-origin requests (CORS).
+
+### GitHub (recommended)
+
+Host your plugin in a GitHub repository and use raw URLs:
+
+```text
+https://raw.githubusercontent.com/{username}/{repo}/refs/heads/{branch}/{filename}.js
+```
+
+**Example:**
+```text
+https://raw.githubusercontent.com/Justineo/tempad-dev-plugin-kong/refs/heads/main/dist/kong.mjs
+```
+
+**Advantages:**
+- Free hosting
+- Version control built-in
+- CORS enabled by default
+- Easy to update
+
+### GitHub Gist
+
+For single-file plugins, use a Gist:
+
+1. Create a new Gist at [gist.github.com](https://gist.github.com)
+2. Add your plugin code
+3. Click "Create public gist"
+4. Click the "Raw" button to get the URL
+
+```text
+https://gist.githubusercontent.com/{username}/{gist-id}/raw/{filename}.js
+```
+
+### CDN services
+
+Host on a CDN that supports ESM:
+
+<CodeGroup>
+```text jsDelivr
+https://cdn.jsdelivr.net/gh/{username}/{repo}@{version}/{file}
+```
+
+```text unpkg
+https://unpkg.com/{package}@{version}/{file}
+```
+</CodeGroup>
+
+<Note>
+  CDN URLs typically cache aggressively. Use version tags or commit SHAs to ensure updates are reflected.
+</Note>
+
+## Plugin structure requirements
+
+Your plugin file must:
+
+1. **Be a valid ES module**
+```ts
+// ✅ Good
+export default definePlugin({ ... })
+
+// ❌ Bad
+module.exports = { ... }
+```
+
+2. **Export as default or named `plugin`**
+```ts
+// Option 1: default export (recommended)
+export default definePlugin({ ... })
+
+// Option 2: named export
+export const plugin = definePlugin({ ... })
+```
+
+3. **Support cross-origin requests**
+   - GitHub raw URLs work automatically
+   - Custom servers must set `Access-Control-Allow-Origin: *`
+
+## Security considerations
+
+Plugins run in a Web Worker with limited globals. Only these are available:
+
+- Standard JavaScript built-ins (`Array`, `Object`, `Math`, `Date`, etc.)
+- `console` for debugging
+- Plugin SDK exports (`definePlugin`, `h`, `findChild`, etc.)
+
+**Not available:**
+- DOM APIs (`document`, `window`, `localStorage`)
+- Network requests (`fetch`, `XMLHttpRequest`)
+- Node.js APIs (`fs`, `path`, `process`)
+- Third-party libraries (unless bundled)
+
+<Warning>
+  For security details, see the [safe globals implementation](https://github.com/ecomfe/tempad-dev/blob/main/packages/extension/codegen/safe.ts).
+</Warning>
+
+## Testing your plugin
+
+### Local testing
+
+1. Run a local dev server (e.g., Vite, Next.js):
+```bash
+npx vite --port 3000
+```
+
+2. Use the local network URL in TemPad Dev:
+```text
+http://localhost:3000/dist/plugin.js
+```
+
+3. Changes will reflect after manually updating in Preferences
+
+### Browser testing
+
+1. Open TemPad Dev in Figma
+2. Go to **Preferences → Plugins**
+3. Paste your plugin URL
+4. Click **Save**
+5. Select an element to see your plugin's output
+
+<Note>
+  Plugin code is cached in browser local storage. You must click "Update" or re-paste the URL to reload changes.
+</Note>
+
+## Sharing your plugin
+
+### Option 1: Share the URL
+
+Simply share your plugin URL with others:
+
+```text
+Install this plugin in TemPad Dev:
+https://raw.githubusercontent.com/username/tempad-plugin/main/dist/index.js
+```
+
+### Option 2: Add to official registry
+
+Contribute to the [plugin registry](https://github.com/ecomfe/tempad-dev/blob/main/packages/extension/plugins/available-plugins.json) so users can install by name:
+
+1. Fork the TemPad Dev repository
+2. Edit `packages/extension/plugins/available-plugins.json`
+3. Add your plugin:
+
+```json
+{
+  "name": "my-plugin",
+  "author": "@yourusername",
+  "description": "Short description of your plugin",
+  "repo": "https://github.com/yourusername/tempad-plugin",
+  "url": "https://raw.githubusercontent.com/yourusername/tempad-plugin/main/dist/index.js"
+}
+```
+
+4. Submit a pull request
+
+Once merged, users can install with:
+```text
+@my-plugin
+```
+
+## Example repository structure
+
+Here's a recommended structure for a plugin repository:
+
+```text
+tempad-plugin/
+├── src/
+│   └── index.ts          # Plugin source code
+├── dist/
+│   └── index.js          # Compiled output
+├── package.json
+├── tsconfig.json
+├── README.md             # Plugin documentation
+└── LICENSE
+```
+
+### Example package.json
+
+```json
+{
+  "name": "tempad-dev-plugin-example",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "@tempad-dev/plugins": "latest",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+## Versioning and updates
+
+<Warning>
+  Plugins are **not auto-updated**. Users must manually update from the Preferences UI.
+</Warning>
+
+### Versioning strategy
+
+1. **Use semantic versioning** in your repository
+2. **Tag releases** in GitHub:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+3. **Update the URL** when breaking changes occur:
+```text
+# Users on v1
+https://raw.githubusercontent.com/username/plugin/refs/tags/v1.0.0/dist/index.js
+
+# Users on v2  
+https://raw.githubusercontent.com/username/plugin/refs/tags/v2.0.0/dist/index.js
+```
+
+### Changelog
+
+Maintain a `CHANGELOG.md` to document changes:
+
+```md
+# Changelog
+
+## [1.1.0] - 2026-03-05
+### Added
+- Support for transformComponent hook
+- New design token mapping
+
+### Fixed
+- Variable conversion edge case
+
+## [1.0.0] - 2026-01-15
+- Initial release
+```
+
+## Real-world examples
+
+Study these production plugins for reference:
+
+- **Kong Design System** - [Justineo/tempad-dev-plugin-kong](https://github.com/Justineo/tempad-dev-plugin-kong)
+- **Tailwind CSS** - [haydenull/tempad-dev-plugin-tailwind](https://github.com/haydenull/tempad-dev-plugin-tailwind)
+- **React Native** - [CANntyield/tempad-dev-plugin-react-native](https://github.com/CANntyield/tempad-dev-plugin-react-native)
+
+## Troubleshooting
+
+### Plugin not loading
+
+- ✅ Check that the URL is accessible in your browser
+- ✅ Verify CORS headers allow cross-origin requests
+- ✅ Ensure the file is a valid ES module
+- ✅ Check browser console for error messages
+
+### Changes not reflecting
+
+- ✅ Manually update the plugin from Preferences
+- ✅ Clear browser cache and reload
+- ✅ Use version tags in URLs to bypass caching
+
+### Transform not working
+
+- ✅ Check that your hook returns a string (or `DevComponent` for `transformComponent`)
+- ✅ Verify the hook name matches exactly (`transform`, `transformVariable`, etc.)
+- ✅ Test with simple console.log statements to debug
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Available Plugins" icon="puzzle-piece" href="/plugins/available-plugins">
+    Browse the official plugin registry
+  </Card>
+  <Card title="Plugin Overview" icon="book" href="/plugins/overview">
+    Learn more about the plugin system
+  </Card>
+</CardGroup>

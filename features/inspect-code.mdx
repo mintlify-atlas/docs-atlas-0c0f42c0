@@ -1,0 +1,239 @@
+---
+title: "Inspect CSS Code"
+description: "Extract CSS and JavaScript code from any Figma element with configurable units, variables, and design tokens"
+icon: "code"
+---
+
+## What It Does
+
+The Inspect Code feature allows you to select any element in Figma and instantly obtain production-ready CSS code. TemPad Dev provides both standard CSS and JavaScript object notation, making it convenient for use in JSX, styled-components, and similar scenarios.
+
+<Frame>
+  <img src="/images/code-light.png" alt="CSS and JavaScript code output for a selected element" />
+</Frame>
+
+## How to Use
+
+1. **Select an element** in your Figma file
+2. Open the TemPad Dev panel
+3. View the generated code in the **Code** section
+4. Click the copy button to copy CSS or JavaScript code to your clipboard
+
+The Code panel automatically updates whenever you select a different element or change configuration options.
+
+## Code Output Formats
+
+### CSS Format
+
+Standard CSS properties with kebab-case naming:
+
+```css
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 16px;
+padding: 24px;
+background: #FFFFFF;
+border-radius: 8px;
+box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+```
+
+### JavaScript Format
+
+JavaScript object notation with camelCase properties:
+
+```javascript
+{
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '16px',
+  padding: '24px',
+  background: '#FFFFFF',
+  borderRadius: '8px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+}
+```
+
+## Configuration Options
+
+Access these settings in the Preferences panel to customize code output.
+
+### CSS Units
+
+<Frame>
+  <img src="/images/unit-light.png" alt="CSS unit and root font size settings" />
+</Frame>
+
+Convert pixel values to your preferred unit:
+
+<Tabs>
+  <Tab title="px (default)">
+    Output uses pixel units directly from Figma:
+    ```css
+    width: 320px;
+    padding: 24px;
+    font-size: 16px;
+    ```
+  </Tab>
+  <Tab title="rem">
+    Convert pixels to rem units based on root font size:
+    ```css
+    width: 20rem;
+    padding: 1.5rem;
+    font-size: 1rem;
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  Switching units only affects the output in the TemPad Dev panel, not the Figma canvas.
+</Warning>
+
+### Root Font Size
+
+When using `rem` units, set the root font size (default: 16px) to ensure accurate conversion:
+
+- **16px** - Standard browser default
+- **14px** - Common for compact UIs
+- **Custom** - Enter any value that matches your design system
+
+**Example conversion with 16px root:**
+- `24px` → `1.5rem`
+- `32px` → `2rem`
+- `12px` → `0.75rem`
+
+### Scale Factor
+
+Apply a scale factor to all pixel values to match handoff requirements:
+
+- **1** (default) - No scaling
+- **0.5** - Scale down by half (e.g., for @2x designs)
+- **2** - Scale up by 2x
+- **Custom** - Enter any multiplier
+
+**Example with 2x scale:**
+```css
+/* Original */
+width: 100px;
+padding: 16px;
+
+/* With scale: 2 */
+width: 200px;
+padding: 32px;
+```
+
+### Variable Display
+
+Control how CSS variables and design tokens appear in the code output:
+
+<Tabs>
+  <Tab title="Reference (default)">
+    Show only variable references:
+    ```css
+    color: var(--primary-500);
+    background: var(--surface-base);
+    border-radius: var(--radius-md);
+    ```
+  </Tab>
+  <Tab title="Resolved">
+    Show only resolved values:
+    ```css
+    color: #3B82F6;
+    background: #FFFFFF;
+    border-radius: 8px;
+    ```
+  </Tab>
+  <Tab title="Both">
+    Show both reference and resolved value:
+    ```css
+    color: var(--primary-500, #3B82F6);
+    background: var(--surface-base, #FFFFFF);
+    border-radius: var(--radius-md, 8px);
+    ```
+  </Tab>
+</Tabs>
+
+## Advanced Features
+
+### Gradient Borders
+
+TemPad Dev automatically detects gradient borders and generates the appropriate pseudo-element code:
+
+```css
+position: relative;
+isolation: isolate;
+border: 2px solid transparent;
+
+&::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  padding: 2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #FF0080 0%, #7928CA 100%);
+  pointer-events: none;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+```
+
+### Complex Shadows
+
+Multiple box shadows are preserved and formatted correctly:
+
+```css
+box-shadow: 
+  0 1px 3px rgba(0, 0, 0, 0.1),
+  0 1px 2px rgba(0, 0, 0, 0.06),
+  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+```
+
+### Auto Layout to Flexbox
+
+Figma's Auto Layout properties are automatically converted to CSS Flexbox:
+
+| Figma Auto Layout | CSS Output |
+|------------------|------------|
+| Horizontal | `flex-direction: row` |
+| Vertical | `flex-direction: column` |
+| Space between | `justify-content: space-between` |
+| Hug contents | `width: fit-content` |
+| Gap | `gap: 16px` |
+
+## Tips and Best Practices
+
+<Tip>
+  **Use rem units for responsive design** - Configure your root font size to match your design system's base, then use rem units for consistent scaling.
+</Tip>
+
+<Tip>
+  **Enable "Both" variable display during development** - This helps you verify that variables are resolving correctly while still seeing the actual values.
+</Tip>
+
+<Tip>
+  **Copy individual code blocks** - Each code block (CSS, JavaScript) has its own copy button for convenience.
+</Tip>
+
+<Note>
+  When using plugins, the code output is transformed according to the plugin's rules. A badge appears in the Code section header indicating which plugin is active.
+</Note>
+
+## Keyboard Shortcuts
+
+While there are no specific keyboard shortcuts for copying code, you can:
+
+- Click on layer names in the Meta section to copy them
+- Click the copy button on any code block to copy to clipboard
+- Use standard browser selection to copy portions of code
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Plugins" icon="puzzle-piece" href="/plugins/overview">
+    Customize code output with plugins for Tailwind, UnoCSS, and more
+  </Card>
+  <Card title="MCP Integration" icon="network-wired" href="/mcp/overview">
+    Use MCP to pull code directly into your IDE or AI agent
+  </Card>
+</CardGroup>

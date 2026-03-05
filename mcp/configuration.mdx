@@ -1,0 +1,316 @@
+---
+title: MCP Server Configuration
+description: Environment variables and advanced configuration options
+---
+
+The TemPad Dev MCP server can be configured using environment variables to adjust timeouts, asset limits, and storage paths.
+
+## Environment Variables
+
+All environment variables are optional. The server uses sensible defaults if not specified.
+
+### TEMPAD_MCP_TOOL_TIMEOUT
+
+<ParamField path="TEMPAD_MCP_TOOL_TIMEOUT" type="number" default="15000">
+  Tool call timeout in milliseconds. Increase this if you're working with complex selections that take longer to generate.
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_TOOL_TIMEOUT=30000  # 30 seconds
+  ```
+  
+  <Warning>
+  Very large timeouts (>60s) may cause MCP clients to disconnect. Keep timeouts reasonable.
+  </Warning>
+</ParamField>
+
+### TEMPAD_MCP_AUTO_ACTIVATE_GRACE
+
+<ParamField path="TEMPAD_MCP_AUTO_ACTIVATE_GRACE" type="number" default="1500">
+  Delay in milliseconds before auto-activating the sole connected extension. When only one Figma tab with TemPad Dev is open, the server waits this duration before automatically marking it as active.
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_AUTO_ACTIVATE_GRACE=3000  # 3 seconds
+  ```
+  
+  Set to `0` to activate immediately when a single extension connects.
+</ParamField>
+
+### TEMPAD_MCP_MAX_ASSET_BYTES
+
+<ParamField path="TEMPAD_MCP_MAX_ASSET_BYTES" type="number" default="8388608">
+  Maximum upload size for captured assets and screenshots in bytes. Default is 8 MB.
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_MAX_ASSET_BYTES=16777216  # 16 MB
+  ```
+  
+  <Note>
+  Increasing this limit also requires sufficient payload budget. The overall MCP message payload limit is 4 MB.
+  </Note>
+</ParamField>
+
+### TEMPAD_MCP_ASSET_TTL_MS
+
+<ParamField path="TEMPAD_MCP_ASSET_TTL_MS" type="number" default="2592000000">
+  Asset cleanup TTL (time to live) in milliseconds, based on last access time. Default is 30 days (2,592,000,000 ms).
+  
+  Set to `0` to disable automatic cleanup.
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_ASSET_TTL_MS=0  # Disable cleanup
+  ```
+  
+  ```bash
+  export TEMPAD_MCP_ASSET_TTL_MS=604800000  # 7 days
+  ```
+  
+  <Tip>
+  Assets are automatically cleaned up when they haven't been accessed within the TTL window. The cleanup runs periodically (max once per day).
+  </Tip>
+</ParamField>
+
+### TEMPAD_MCP_RUNTIME_DIR
+
+<ParamField path="TEMPAD_MCP_RUNTIME_DIR" type="string" default="system temp/tempad-dev/run">
+  Override the runtime directory where the server stores Unix sockets and lock files.
+  
+  **Default paths**:
+  - macOS/Linux: `/tmp/tempad-dev/run`
+  - Windows: `%TEMP%\tempad-dev\run`
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_RUNTIME_DIR="$HOME/.tempad/runtime"
+  ```
+</ParamField>
+
+### TEMPAD_MCP_LOG_DIR
+
+<ParamField path="TEMPAD_MCP_LOG_DIR" type="string" default="system temp/tempad-dev/log">
+  Override the log directory. Currently not actively used but reserved for future logging enhancements.
+  
+  **Default paths**:
+  - macOS/Linux: `/tmp/tempad-dev/log`
+  - Windows: `%TEMP%\tempad-dev\log`
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_LOG_DIR="$HOME/.tempad/logs"
+  ```
+</ParamField>
+
+### TEMPAD_MCP_ASSET_DIR
+
+<ParamField path="TEMPAD_MCP_ASSET_DIR" type="string" default="system temp/tempad-dev/assets">
+  Override the asset storage directory where uploaded assets are cached.
+  
+  **Default paths**:
+  - macOS/Linux: `/tmp/tempad-dev/assets`
+  - Windows: `%TEMP%\tempad-dev\assets`
+  
+  **Example**:
+  ```bash
+  export TEMPAD_MCP_ASSET_DIR="$HOME/.tempad/assets"
+  ```
+  
+  <Warning>
+  The asset directory should be on a local filesystem with sufficient space. Avoid network-mounted volumes for performance.
+  </Warning>
+</ParamField>
+
+## Hard-Coded Constants
+
+Some limits are hard-coded in the shared contract and cannot be changed via environment variables:
+
+<ResponseField name="MCP_MAX_PAYLOAD_BYTES" type="number" value="4194304">
+  Maximum MCP message payload size: **4 MB**
+  
+  This is the total size limit for tool responses, including code, assets metadata, and tokens. Assets are returned as URLs, not embedded bytes, to stay within this limit.
+</ResponseField>
+
+<ResponseField name="MCP_PORT_CANDIDATES" type="number[]" value="[6220, 7431, 8127]">
+  WebSocket server port candidates. The server tries these ports in order and uses the first available one.
+  
+  If all ports are in use, the server will fail to start.
+</ResponseField>
+
+<ResponseField name="MCP_HASH_HEX_LENGTH" type="number" value="8">
+  Asset hash length in hex characters. Hashes are the first 8 characters of the SHA-256 digest.
+</ResponseField>
+
+## Configuration Examples
+
+### Development Environment
+
+For faster iteration during development:
+
+```bash
+export TEMPAD_MCP_TOOL_TIMEOUT=30000           # Longer timeout for complex designs
+export TEMPAD_MCP_AUTO_ACTIVATE_GRACE=500      # Quick activation
+export TEMPAD_MCP_ASSET_TTL_MS=3600000         # 1 hour cleanup (dev assets churn)
+```
+
+### Production/CI Environment
+
+For stable, long-running deployments:
+
+```bash
+export TEMPAD_MCP_TOOL_TIMEOUT=20000           # Reasonable timeout
+export TEMPAD_MCP_ASSET_TTL_MS=604800000       # 7 day cleanup
+export TEMPAD_MCP_ASSET_DIR="/var/tempad/assets"  # Persistent storage
+export TEMPAD_MCP_RUNTIME_DIR="/var/tempad/run"
+```
+
+### High-Volume Asset Usage
+
+For teams generating many assets:
+
+```bash
+export TEMPAD_MCP_MAX_ASSET_BYTES=16777216     # 16 MB max per asset
+export TEMPAD_MCP_ASSET_TTL_MS=1209600000      # 14 day cleanup
+export TEMPAD_MCP_ASSET_DIR="$HOME/.tempad/assets"  # Dedicated asset storage
+```
+
+### Minimal Cleanup
+
+Disable cleanup for persistent asset storage:
+
+```bash
+export TEMPAD_MCP_ASSET_TTL_MS=0               # Never auto-cleanup assets
+export TEMPAD_MCP_ASSET_DIR="/path/to/storage" # Permanent storage location
+```
+
+## Setting Environment Variables
+
+How you set environment variables depends on your MCP client:
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    Add `env` to your server configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "TemPad Dev": {
+          "command": "npx",
+          "args": ["-y", "@tempad-dev/mcp@latest"],
+          "env": {
+            "TEMPAD_MCP_TOOL_TIMEOUT": "30000",
+            "TEMPAD_MCP_ASSET_TTL_MS": "604800000"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="VS Code / Cursor">
+    Add environment variables to your MCP configuration in settings:
+
+    ```json
+    {
+      "mcp.servers": {
+        "TemPad Dev": {
+          "command": "npx",
+          "args": ["-y", "@tempad-dev/mcp@latest"],
+          "env": {
+            "TEMPAD_MCP_TOOL_TIMEOUT": "30000"
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Shell / Terminal">
+    Export variables before running the MCP server:
+
+    ```bash
+    export TEMPAD_MCP_TOOL_TIMEOUT=30000
+    export TEMPAD_MCP_ASSET_TTL_MS=604800000
+    npx -y @tempad-dev/mcp@latest
+    ```
+
+    Or use inline variables:
+
+    ```bash
+    TEMPAD_MCP_TOOL_TIMEOUT=30000 npx -y @tempad-dev/mcp@latest
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Asset cleanup not working">
+    - Verify `TEMPAD_MCP_ASSET_TTL_MS` is set to a positive value (not `0`)
+    - Check that the asset directory is writable
+    - Cleanup runs at most once per day; wait for the next cleanup cycle
+    - Check server logs for cleanup sweep messages
+  </Accordion>
+
+  <Accordion title="Timeouts still occurring">
+    - Increase `TEMPAD_MCP_TOOL_TIMEOUT` further
+    - Try selecting a smaller subtree or simpler node
+    - Check if the Figma file is very complex (thousands of layers)
+    - Verify the Figma tab is active and responsive
+  </Accordion>
+
+  <Accordion title="Port conflicts">
+    - Check if ports 6220, 7431, or 8127 are in use: `lsof -i :6220`
+    - Stop other services using those ports
+    - Port candidates are hard-coded and cannot be changed without modifying source
+  </Accordion>
+
+  <Accordion title="Asset uploads failing">
+    - Check `TEMPAD_MCP_MAX_ASSET_BYTES` limit
+    - Verify asset directory has sufficient disk space
+    - Ensure asset directory permissions allow writes
+    - Check if asset file size exceeds the limit
+  </Accordion>
+</AccordionGroup>
+
+## Monitoring and Logging
+
+The MCP server logs to stdout using structured JSON logging (via `pino`). Key log events include:
+
+- **Hub startup**: Version, runtime directories, WebSocket port
+- **Extension connections**: Connection, registration, activation, disconnection
+- **Tool calls**: Tool name, request ID, extension ID, duration
+- **Asset operations**: Uploads, downloads, cleanup sweeps
+- **Errors**: Tool failures, timeout errors, validation errors
+
+<Tip>
+Pipe server logs to a file or logging service for debugging:
+```bash
+npx -y @tempad-dev/mcp@latest 2>&1 | tee tempad-mcp.log
+```
+</Tip>
+
+## Performance Tuning
+
+<CardGroup cols={2}>
+  <Card title="Reduce Timeout" icon="clock">
+    Lower `TEMPAD_MCP_TOOL_TIMEOUT` for faster failure feedback during development (e.g., 10000 ms).
+  </Card>
+
+  <Card title="Increase Asset Limit" icon="image">
+    Raise `TEMPAD_MCP_MAX_ASSET_BYTES` if working with high-resolution screenshots or large SVGs.
+  </Card>
+
+  <Card title="Persistent Storage" icon="hard-drive">
+    Set `TEMPAD_MCP_ASSET_DIR` to a dedicated directory outside system temp for better performance.
+  </Card>
+
+  <Card title="Aggressive Cleanup" icon="broom">
+    Reduce `TEMPAD_MCP_ASSET_TTL_MS` to 1-7 days if disk space is constrained.
+  </Card>
+</CardGroup>
+
+<Note>
+Most users do not need to change these defaults. Only adjust configuration if you encounter specific issues or have special requirements.
+</Note>

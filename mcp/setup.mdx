@@ -1,0 +1,150 @@
+---
+title: MCP Server Setup
+description: Step-by-step guide to installing and configuring TemPad Dev MCP
+---
+
+## Requirements
+
+<Card icon="circle-check" title="Prerequisites">
+  - **Node.js 18+** with `npx` available in your PATH
+  - **TemPad Dev extension** installed and running in a Figma tab
+  - An **MCP-compatible client** (Claude Desktop, VS Code with Cline, Cursor, Windsurf, etc.)
+</Card>
+
+<Note>
+Node.js is required for both the MCP server runtime and the skills CLI. The server uses `npx` to run the latest version without manual installation.
+</Note>
+
+## Installation
+
+<Steps>
+  <Step title="Enable MCP in TemPad Dev">
+    Open TemPad Dev in your Figma file:
+    1. Click the TemPad Dev panel
+    2. Go to **Preferences → MCP server**
+    3. Toggle **Enable MCP server** to ON
+  </Step>
+
+  <Step title="Add the Server to Your MCP Client">
+    Choose your installation method based on your MCP client:
+
+    <Tabs>
+      <Tab title="Manual Configuration">
+        Add this configuration to your MCP client's settings file:
+
+        ```json
+        {
+          "mcpServers": {
+            "TemPad Dev": {
+              "command": "npx",
+              "args": ["-y", "@tempad-dev/mcp@latest"]
+            }
+          }
+        }
+        ```
+
+        **Configuration file locations:**
+        - **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows)
+        - **VS Code/Cursor/TRAE**: Use the deep link in TemPad Dev Preferences → MCP server
+        - **Windsurf**: Copy the JSON snippet from the Preferences panel
+      </Tab>
+
+      <Tab title="CLI Installation">
+        If your client provides a CLI installer, use one of these commands:
+
+        <CodeGroup>
+        ```bash Claude CLI
+        claude mcp add --transport stdio "TemPad Dev" -- npx -y @tempad-dev/mcp@latest
+        ```
+
+        ```bash Codex CLI
+        codex mcp add "TemPad Dev" -- npx -y @tempad-dev/mcp@latest
+        ```
+        </CodeGroup>
+      </Tab>
+
+      <Tab title="Quick Actions">
+        For VS Code, Cursor, and TRAE:
+        1. Open **Preferences → MCP server** in TemPad Dev
+        2. Click the deep link button for your editor
+        3. Your editor will prompt to install the MCP server
+
+        For Windsurf:
+        1. Copy the JSON snippet from the Preferences panel
+        2. Paste it into your Windsurf MCP configuration
+      </Tab>
+    </Tabs>
+  </Step>
+
+  <Step title="Restart Your MCP Client">
+    Restart your MCP client application to load the new server configuration.
+  </Step>
+
+  <Step title="Verify Connection">
+    1. Keep the TemPad Dev tab active and in the foreground
+    2. In Figma, select a design element
+    3. In your MCP client, try invoking the `get_code` tool
+    4. Check the MCP status badge in the TemPad Dev panel title bar
+
+    The badge shows the current connection status:
+    - **Unavailable** (gray): MCP server not configured or not running
+    - **Inactive** (yellow): Server running but this tab is not active
+    - **Active** (green): Connected and ready for tool calls
+  </Step>
+</Steps>
+
+## Multiple Figma Tabs
+
+If you have multiple Figma files open with TemPad Dev running:
+
+1. Only **one tab can be active** at a time
+2. Click the **MCP badge** in the TemPad Dev panel to activate that tab
+3. Activating a tab automatically deactivates other tabs
+4. Tool calls are routed to whichever tab is currently active
+
+<Tip>
+Keep the Figma tab with your target design file active and in the foreground while using MCP tools to ensure stable communication.
+</Tip>
+
+## Troubleshooting
+
+### Connection Issues
+
+<AccordionGroup>
+  <Accordion title="Status shows 'Unavailable'">
+    - Verify Node.js 18+ is installed: `node --version`
+    - Ensure `npx` is available: `npx --version`
+    - Check your MCP client configuration file for syntax errors
+    - Restart your MCP client after configuration changes
+  </Accordion>
+
+  <Accordion title="Status shows 'Inactive'">
+    - Click the MCP badge in the TemPad Dev panel to activate this tab
+    - Only one Figma tab can be active at a time
+    - Close other Figma tabs if you only need one design file
+  </Accordion>
+
+  <Accordion title="Tool calls timeout or fail">
+    - Keep the Figma tab active and in the foreground
+    - Check that TemPad Dev panel is open and visible
+    - Verify the MCP badge shows "Active" (green)
+    - Try selecting a simpler node (smaller subtree) first
+  </Accordion>
+
+  <Accordion title="WebSocket connection errors">
+    - Check if another process is using ports 6220, 7431, or 8127
+    - Ensure your firewall allows local WebSocket connections
+    - Try restarting the MCP server (restart your MCP client)
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tools Reference" icon="wrench" href="/mcp/tools">
+    Learn about available tools and their parameters
+  </Card>
+  <Card title="Agent Skill" icon="wand-magic-sparkles" href="/mcp/agent-skill">
+    Install the skill for production-ready code generation
+  </Card>
+</CardGroup>

@@ -1,0 +1,247 @@
+---
+title: 'get_structure'
+description: 'MCP tool to extract Figma node structure and geometry'
+---
+
+## Overview
+
+The `get_structure` MCP tool extracts the hierarchical structure and geometric properties of Figma nodes. It provides a compact outline of the design tree, useful for understanding layout, identifying nodes for code generation, or debugging auto-layout issues.
+
+<Note>
+This is an MCP (Model Context Protocol) tool used by AI assistants. For plugin development, see [Query Helpers](/api/types#query-types).
+</Note>
+
+## Parameters
+
+<ParamField path="nodeId" type="string">
+  Optional node ID to outline. Defaults to the current single selection. Useful when auto-layout hints are none/inferred or you need explicit geometry for refactors.
+</ParamField>
+
+<ParamField path="options" type="object">
+  <Expandable title="Options">
+    <ParamField path="depth" type="number" positive>
+      Limit traversal depth. Defaults to full tree (subject to safety caps for payload size).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="roots" type="OutlineNode[]" required>
+  Array of root nodes in the structure outline.
+  
+  <Expandable title="OutlineNode">
+    <ResponseField name="id" type="string" required>
+      Figma node ID
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Node name (truncated to 48 characters if longer)
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Figma node type (e.g., 'FRAME', 'TEXT', 'INSTANCE')
+    </ResponseField>
+    
+    <ResponseField name="x" type="number" required>
+      X coordinate (rounded to 1 decimal place)
+    </ResponseField>
+    
+    <ResponseField name="y" type="number" required>
+      Y coordinate (rounded to 1 decimal place)
+    </ResponseField>
+    
+    <ResponseField name="width" type="number" required>
+      Node width (rounded to 1 decimal place)
+    </ResponseField>
+    
+    <ResponseField name="height" type="number" required>
+      Node height (rounded to 1 decimal place)
+    </ResponseField>
+    
+    <ResponseField name="children" type="OutlineNode[]">
+      Array of child nodes (only present if the node has children)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Example Request
+
+```json
+{
+  "nodeId": "123:456",
+  "options": {
+    "depth": 3
+  }
+}
+```
+
+## Example Response
+
+```json
+{
+  "roots": [
+    {
+      "id": "123:456",
+      "name": "App Container",
+      "type": "FRAME",
+      "x": 0,
+      "y": 0,
+      "width": 375,
+      "height": 812,
+      "children": [
+        {
+          "id": "123:457",
+          "name": "Header",
+          "type": "FRAME",
+          "x": 0,
+          "y": 0,
+          "width": 375,
+          "height": 64,
+          "children": [
+            {
+              "id": "123:458",
+              "name": "Title",
+              "type": "TEXT",
+              "x": 16,
+              "y": 20,
+              "width": 343,
+              "height": 24
+            }
+          ]
+        },
+        {
+          "id": "123:459",
+          "name": "Content",
+          "type": "FRAME",
+          "x": 0,
+          "y": 64,
+          "width": 375,
+          "height": 748
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Payload Optimization
+
+The tool automatically compacts the structure to fit within MCP payload limits:
+
+<Steps>
+  <Step title="Node Limiting">
+    If the full structure exceeds the target payload size (~15% of max), the tool progressively reduces the node count:
+    - Step 1: 240 nodes
+    - Step 2: 180 nodes
+    - Step 3: 140 nodes
+    - Step 4: 100 nodes
+    - Step 5: 70 nodes
+    - Step 6: 50 nodes
+  </Step>
+  
+  <Step title="Name Truncation">
+    Node names longer than 48 characters are truncated with '...' suffix
+  </Step>
+  
+  <Step title="Coordinate Precision">
+    Coordinates are rounded to 1 decimal place to reduce payload size
+  </Step>
+</Steps>
+
+<Warning>
+**Payload Size Limits**
+
+If the structure is too large even after compaction, the tool will throw an error:
+
+`Structure payload too large to return. Reduce selection or depth and retry.`
+
+Solutions:
+- Provide a `depth` limit in options
+- Select a smaller portion of the design
+- Target a specific subtree with `nodeId`
+</Warning>
+
+## Use Cases
+
+### Understanding Layout Hierarchy
+
+Use `get_structure` to understand the nesting and organization of a design before generating code:
+
+```json
+{
+  "nodeId": "page-root"
+}
+```
+
+### Identifying Target Nodes
+
+Find specific nodes by examining the structure, then use their IDs with `get_code`:
+
+1. Call `get_structure` to see the full tree
+2. Identify the target node ID from the outline
+3. Pass that ID to `get_code` for precise code generation
+
+### Debugging Auto-Layout
+
+When auto-layout hints are unclear (none/inferred), `get_structure` provides explicit coordinates:
+
+```json
+{
+  "nodeId": "problematic-frame",
+  "options": {
+    "depth": 2
+  }
+}
+```
+
+### Validating Responsive Designs
+
+Check dimensions across different breakpoints or device frames:
+
+```json
+{
+  "nodeId": "mobile-frame"
+}
+```
+
+Compare with:
+
+```json
+{
+  "nodeId": "desktop-frame"
+}
+```
+
+## Plugin Query Helpers
+
+For plugin development, TemPad Dev provides query helpers to search the design tree:
+
+```typescript
+import { findOne, findAll, queryOne, queryAll } from '@tempad-dev/plugins'
+
+// Find first text node
+const title = findOne(frame, { type: 'TEXT', name: /title/i })
+
+// Find all visible vectors
+const icons = findAll(toolbar, { type: 'VECTOR', visible: true })
+
+// Chained queries
+const button = queryOne(page, [
+  { query: 'children', name: 'Header' },
+  { query: 'child', type: 'INSTANCE', name: /Button/ }
+])
+```
+
+See [Types Reference](/api/types#query-types) for full query API.
+
+## See Also
+
+<CardGroup cols={2}>
+  <Card title="get_code" icon="code" href="/api/get-code">
+    Generate code from designs
+  </Card>
+  <Card title="Query Types" icon="brackets-curly" href="/api/types#query-types">
+    Plugin query API reference
+  </Card>
+</CardGroup>

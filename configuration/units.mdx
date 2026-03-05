@@ -1,0 +1,321 @@
+---
+title: Unit Conversion
+description: Convert between px, rem, and scaled units in CSS output
+---
+
+TemPad Dev provides flexible unit conversion options to match your project's CSS conventions and design handoff requirements. You can configure CSS units, root font size, and scale factors to transform pixel values in the generated code.
+
+<img src="/images/unit-conversion.png" alt="CSS unit and root font size settings" />
+
+<Warning>
+Switching units only affects the output in the TemPad Dev panel, not the Figma canvas.
+</Warning>
+
+## CSS Unit Options
+
+Choose between two unit types for CSS output:
+
+- **px** (default): Outputs dimensions in pixels as they appear in Figma
+- **rem**: Converts pixel values to rem units based on the root font size
+
+### Pixel (px) Output
+
+When `cssUnit` is set to `'px'`, dimensions are output directly from Figma:
+
+```css
+width: 320px;
+font-size: 16px;
+padding: 24px;
+```
+
+### REM Output
+
+When `cssUnit` is set to `'rem'`, pixel values are converted using the formula:
+
+```
+rem value = px value / rootFontSize
+```
+
+With a root font size of 16px:
+
+```css
+width: 20rem;        /* 320px / 16 = 20rem */
+font-size: 1rem;     /* 16px / 16 = 1rem */
+padding: 1.5rem;     /* 24px / 16 = 1.5rem */
+```
+
+## Root Font Size
+
+The root font size determines the conversion ratio from pixels to rem units. This should match the base font size defined in your CSS (typically on the `<html>` element).
+
+**Default:** 16px
+
+**Common values:**
+- 16px (browser default)
+- 10px (for easier mental math: 1rem = 10px)
+- 14px or 15px (for smaller base sizes)
+
+### Example Conversion
+
+With `rootFontSize: 20`:
+
+```css
+/* Original: 40px */
+width: 2rem;  /* 40 / 20 = 2 */
+
+/* Original: 15px */
+font-size: 0.75rem;  /* 15 / 20 = 0.75 */
+```
+
+### Fallback Behavior
+
+If `rootFontSize` is set to 0 or a falsy value, the conversion falls back to 16px:
+
+```typescript
+if (config.cssUnit === 'rem') {
+  const root = config.rootFontSize || 16
+  current = pxToRem(current, root)
+}
+```
+
+## Scale Factor
+
+The scale option applies a multiplier to all pixel values before other conversions. This is useful when:
+- Design files use a different scale than the target implementation
+- Handoff specifications require scaled dimensions
+- Converting between design systems with different base units
+
+**Default:** 1 (no scaling)
+
+### How Scale Works
+
+Scale is applied first, before rem conversion:
+
+```typescript
+if (typeof config.scale === 'number' && config.scale !== 1) {
+  current = scalePxValue(current, config.scale)
+}
+
+if (config.cssUnit === 'rem') {
+  const root = config.rootFontSize || 16
+  current = pxToRem(current, root)
+}
+```
+
+### Scale Examples
+
+**Scale: 2** - Double all dimensions:
+
+```css
+/* Figma: 20px → Output: */
+width: 40px;
+
+/* With rem (rootFontSize: 16): */
+width: 2.5rem;  /* (20 * 2) / 16 = 2.5 */
+```
+
+**Scale: 0.5** - Half all dimensions:
+
+```css
+/* Figma: 40px → Output: */
+width: 20px;
+
+/* With rem (rootFontSize: 16): */
+width: 1.25rem;  /* (40 * 0.5) / 16 = 1.25 */
+```
+
+**Scale: 0.75** - 75% of original size:
+
+```css
+/* Figma: 24px → Output: */
+padding: 18px;  /* 24 * 0.75 = 18 */
+```
+
+## Properties That Keep Pixels
+
+Certain CSS properties always preserve pixel units, even when rem conversion is enabled. These are defined in the `KEEP_PX_PROPS` set:
+
+```typescript
+const KEEP_PX_PROPS = new Set([
+  'border',
+  'border-top',
+  'border-right',
+  'border-bottom',
+  'border-left',
+  'border-width',
+  'border-top-width',
+  'border-right-width',
+  'border-bottom-width',
+  'border-left-width',
+  'outline',
+  'outline-width'
+])
+```
+
+**Example with rem output:**
+
+```css
+width: 20rem;              /* Converted from 320px */
+font-size: 1rem;           /* Converted from 16px */
+border: 1px solid #000;    /* Kept as px */
+outline-width: 2px;        /* Kept as px */
+```
+
+## Combining Scale and REM
+
+When using both scale and rem conversion, the transformations are applied in sequence:
+
+1. Apply scale multiplier
+2. Convert to rem (if enabled)
+
+**Example configuration:**
+
+```typescript
+{
+  cssUnit: 'rem',
+  rootFontSize: 20,
+  scale: 2
+}
+```
+
+**Transformation:**
+
+```
+Figma value: 20px
+↓ Scale (× 2)
+Scaled value: 40px
+↓ REM conversion (÷ 20)
+Final output: 2rem
+```
+
+## Implementation Details
+
+### Value Transformation Functions
+
+The conversion logic is implemented in `utils/css.ts`:
+
+```typescript
+function scalePxValue(value: string, scale: number): string {
+  return transformPxValue(value, (val) => `${toDecimalPlace(scale * val)}px`)
+}
+
+function pxToRem(value: string, rootFontSize: number) {
+  return transformPxValue(value, (val) => `${toDecimalPlace(val / rootFontSize)}rem`)
+}
+
+export function normalizeCssValue(value: string, config: CodegenConfig, prop?: string): string {
+  if (!value) return value
+
+  let current = value.trim()
+
+  // Skip conversion for properties that must stay in px
+  if (prop && KEEP_PX_PROPS.has(prop)) {
+    return current
+  }
+
+  // Apply scale first
+  if (typeof config.scale === 'number' && config.scale !== 1) {
+    current = scalePxValue(current, config.scale)
+  }
+
+  // Then convert to rem if enabled
+  if (config.cssUnit === 'rem') {
+    const root = config.rootFontSize || 16
+    current = pxToRem(current, root)
+  }
+
+  return current
+}
+```
+
+### Configuration Type
+
+The configuration interface is defined in `utils/codegen.ts`:
+
+```typescript
+export type CodegenConfig = {
+  cssUnit: 'px' | 'rem'
+  rootFontSize: number
+  scale: number
+}
+```
+
+### Worker Serialization Options
+
+When passing configuration to the codegen worker:
+
+```typescript
+export function workerUnitOptions(
+  config: CodegenConfig
+): Pick<SerializeOptions, 'useRem' | 'rootFontSize' | 'scale'> {
+  return {
+    useRem: config.cssUnit === 'rem',
+    rootFontSize: config.rootFontSize,
+    scale: config.scale
+  }
+}
+```
+
+## Plugin Integration
+
+Plugins can access and transform pixel values using the `transformPx` hook:
+
+```typescript
+import { definePlugin } from '@tempad-dev/plugins'
+
+export default definePlugin({
+  name: 'Custom Units',
+  code: {
+    css: {
+      transformPx({ value, options }) {
+        // Custom transformation
+        return `${value / 8}grid`
+      }
+    }
+  }
+})
+```
+
+The plugin receives the current configuration through the `options` parameter:
+
+```typescript
+{
+  useRem: boolean
+  rootFontSize: number
+  scale: number
+}
+```
+
+## Testing Examples
+
+From the test suite (`tests/utils/css.test.ts`):
+
+```typescript
+it('normalizes values with scale/rem and keep-px exceptions', () => {
+  const remConfig = { cssUnit: 'rem' as const, rootFontSize: 20, scale: 2 }
+
+  expect(normalizeCssValue(' 10px 0px ', remConfig)).toBe('1rem 0')
+  expect(normalizeCssValue('1px solid #000', remConfig, 'border')).toBe('1px solid #000')
+
+  expect(
+    normalizeStyleValues(
+      {
+        width: '20px',
+        'font-size': '16px',
+        border: '1px solid #000'
+      },
+      remConfig
+    )
+  ).toEqual({
+    width: '2rem',       // (20 * 2) / 20 = 2
+    'font-size': '1.6rem', // (16 * 2) / 20 = 1.6
+    border: '1px solid #000' // Kept as-is
+  })
+})
+```
+
+## Related Topics
+
+- [Preferences](/configuration/preferences) - General preference settings
+- [Variables](/configuration/variables) - Variable display configuration
+- [Plugins](/plugins/creating-plugins) - Custom transformations with plugins

@@ -1,0 +1,360 @@
+---
+title: Building
+description: Build commands and packaging for TemPad Dev
+---
+
+## Build Tools
+
+Each package uses a specific build tool:
+
+- **Extension:** WXT (Web Extension Toolkit)
+- **MCP Server:** tsdown
+- **Plugins:** tsdown
+- **Shared:** tsdown
+
+## Build Commands
+
+### Build All Packages
+
+From repository root:
+
+```bash
+pnpm build
+```
+
+This runs `pnpm -r build`, building packages in dependency order:
+
+1. `@tempad-dev/shared` (no dependencies)
+2. `@tempad-dev/plugins` (no dependencies)
+3. `@tempad-dev/mcp` (depends on shared)
+4. `@tempad-dev/extension` (depends on shared, plugins)
+
+### Build Individual Packages
+
+#### Extension
+
+```bash
+pnpm build:ext
+```
+
+Or from package directory:
+
+```bash
+pnpm --filter @tempad-dev/extension build
+```
+
+**Output:** `packages/extension/.output/chrome-mv3/`
+
+**Build steps:**
+1. WXT builds extension
+2. Rewrite rules are compiled
+3. README is generated
+
+**Rewrite rules only:**
+
+```bash
+pnpm --filter @tempad-dev/extension build:rewrite
+```
+
+Compiles `rewrite/figma.ts` to `dist/figma.js` using esbuild.
+
+#### MCP Server
+
+```bash
+pnpm build:mcp
+```
+
+Or:
+
+```bash
+pnpm --filter @tempad-dev/mcp build
+```
+
+**Output:** `packages/mcp-server/dist/`
+
+**Build tool:** tsdown
+
+#### Plugins
+
+```bash
+pnpm build:plugins
+```
+
+Or:
+
+```bash
+pnpm --filter @tempad-dev/plugins build
+```
+
+**Output:** `packages/plugins/dist/`
+
+**Build tool:** tsdown
+
+**Exports:**
+- ESM: `dist/index.js`
+- Types: `dist/index.d.ts`
+
+#### Shared
+
+```bash
+pnpm --filter @tempad-dev/shared build
+```
+
+**Output:** `packages/shared/dist/`
+
+**Build tool:** tsdown
+
+**Exports:**
+- ESM: `dist/index.js`
+- Types: `dist/index.d.ts`
+
+## Packaging
+
+### Extension Packaging
+
+Create a distributable extension ZIP:
+
+```bash
+pnpm zip
+```
+
+Or:
+
+```bash
+pnpm --filter @tempad-dev/extension zip
+```
+
+**Output:** `packages/extension/.output/*.zip`
+
+This packages the built extension for Chrome Web Store submission.
+
+**Pre-requisites:**
+- Extension must be built first (`pnpm build:ext`)
+
+### NPM Publishing
+
+#### Plugins Package
+
+```bash
+pnpm npm:plugins
+```
+
+Publishes `@tempad-dev/plugins` to npm with public access.
+
+**Pre-publish checks:**
+- Runs `build` automatically via `prepublishOnly`
+- Includes only `dist/` and `README.md`
+
+#### MCP Server Package
+
+```bash
+pnpm npm:mcp
+```
+
+Publishes `@tempad-dev/mcp` to npm with public access.
+
+**Pre-publish checks:**
+- Runs `build` automatically via `prepublishOnly`
+- Includes only `dist/` and `README.md`
+
+**Binary entrypoint:** `dist/cli.mjs`
+
+## Development Builds
+
+### Extension Development Mode
+
+```bash
+pnpm dev
+```
+
+Starts WXT dev server with:
+- Hot module reloading
+- Source maps
+- Fast incremental builds
+- Live extension reloading in browser
+
+**Output:** `packages/extension/.output/chrome-mv3/`
+
+**Load in browser:**
+1. Navigate to `chrome://extensions`
+2. Enable "Developer mode"
+3. Click "Load unpacked"
+4. Select `.output/chrome-mv3/`
+
+### Watch Mode for Libraries
+
+For libraries (mcp, plugins, shared), use build tool watch mode:
+
+```bash
+# Not built-in, but you can use tsdown --watch
+pnpm --filter @tempad-dev/mcp exec tsdown --watch
+```
+
+## Build Output Structure
+
+### Extension
+
+```
+packages/extension/.output/chrome-mv3/
+├── manifest.json
+├── content-scripts/
+├── background/
+├── assets/
+├── figma.js          # Rewrite rules
+├── figma.json        # Rewrite manifest
+└── ...
+```
+
+### MCP Server
+
+```
+packages/mcp-server/dist/
+├── cli.mjs           # Binary entrypoint
+├── hub.mjs
+├── tools.mjs
+└── ...
+```
+
+### Plugins
+
+```
+packages/plugins/dist/
+├── index.js          # ESM export
+├── index.d.ts        # TypeScript types
+└── ...
+```
+
+### Shared
+
+```
+packages/shared/dist/
+├── index.js          # ESM export
+├── index.d.ts        # TypeScript types
+├── mcp/
+│   ├── constants.js
+│   ├── tools.js
+│   └── ...
+└── figma/
+    ├── color.js
+    └── ...
+```
+
+## Build Scripts Deep Dive
+
+### Extension Build Script
+
+From `packages/extension/package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "wxt build && pnpm run build:rewrite && pnpm run build:readme",
+    "build:rewrite": "esbuild ./rewrite/figma.ts --outfile=./dist/figma.js --bundle --format=iife && cp ./public/rules/figma.legacy.json ./dist/figma.json && cp ./public/rules/figma.legacy.json ./dist/figma.comply.json",
+    "build:readme": "tsx ./build/readme.ts"
+  }
+}
+```
+
+**Steps:**
+1. WXT builds extension bundle
+2. esbuild compiles rewrite rules to IIFE
+3. Copies rewrite manifests
+4. Generates README from template
+
+### Library Build Scripts
+
+From `packages/mcp-server/package.json`, `packages/plugins/package.json`, `packages/shared/package.json`:
+
+```json
+{
+  "scripts": {
+    "build": "tsdown",
+    "prepare": "pnpm run build"
+  }
+}
+```
+
+**tsdown** handles:
+- TypeScript compilation
+- ESM output
+- Declaration file generation
+- Tree-shaking
+
+## Clean Builds
+
+To ensure clean builds, remove previous outputs:
+
+```bash
+# Extension
+rm -rf packages/extension/.output packages/extension/dist
+
+# MCP Server
+rm -rf packages/mcp-server/dist
+
+# Plugins
+rm -rf packages/plugins/dist
+
+# Shared
+rm -rf packages/shared/dist
+
+# Rebuild
+pnpm build
+```
+
+## Troubleshooting
+
+### Build Fails with Type Errors
+
+**Check:**
+1. Dependencies are built: `pnpm build`
+2. Type check passes: `pnpm typecheck`
+3. Clean install: `rm -rf node_modules && pnpm install`
+
+### Extension Build Succeeds but Doesn't Load
+
+**Check:**
+1. Output directory exists: `packages/extension/.output/chrome-mv3/`
+2. `manifest.json` is present
+3. Rewrite rules were built: `dist/figma.js` exists
+4. Browser console for errors
+
+### Library Build Missing Types
+
+**Check:**
+1. `tsconfig.json` has `declaration: true`
+2. tsdown config includes types
+3. `dist/index.d.ts` exists after build
+
+### pnpm workspace:* Dependencies Not Resolving
+
+**Solution:**
+
+Build dependencies first:
+
+```bash
+pnpm --filter @tempad-dev/shared build
+pnpm --filter @tempad-dev/plugins build
+pnpm build:ext
+```
+
+## CI/CD Builds
+
+For CI environments, use:
+
+```bash
+# Install with frozen lockfile
+pnpm install --frozen-lockfile
+
+# Build all
+pnpm build
+
+# Verify
+pnpm typecheck
+pnpm test:run
+```
+
+## Related Documentation
+
+- [Setup](/development/setup) - Development environment setup
+- [Testing](/development/testing) - Test commands
+- [Architecture](/development/architecture) - Package structure
